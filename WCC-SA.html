@@ -339,16 +339,25 @@
         </button>
       </div>
 
-      <div class="layer-group" id="spc-group">
-        <span class="layer-group-label">SPC Critical Fire Wx</span>
-        <button class="toggle-btn" id="tog-spc1" onclick="toggleLayer('spc1')">
-          <span class="toggle-dot" style="background:#ff2200"></span>Day 1
+      <div class="layer-group">
+        <span class="layer-group-label">NWS Forecast</span>
+        <button class="toggle-btn" id="tog-precip" onclick="toggleLayer('precip')">
+          <span class="toggle-dot" style="background:#4499ff"></span>Precip %
         </button>
-        <button class="toggle-btn" id="tog-spc2" onclick="toggleLayer('spc2')">
-          <span class="toggle-dot" style="background:#ff5500"></span>Day 2
+        <button class="toggle-btn" id="tog-wx" onclick="toggleLayer('wx')">
+          <span class="toggle-dot" style="background:#88ccff"></span>Precip Type
         </button>
-        <button class="toggle-btn" id="tog-spc3" onclick="toggleLayer('spc3')">
-          <span class="toggle-dot" style="background:#ff7700"></span>Day 3
+        <button class="toggle-btn" id="tog-minrh" onclick="toggleLayer('minrh')">
+          <span class="toggle-dot" style="background:#22cc77"></span>Min RH
+        </button>
+        <button class="toggle-btn" id="tog-maxrh" onclick="toggleLayer('maxrh')">
+          <span class="toggle-dot" style="background:#00ffaa"></span>Max RH
+        </button>
+        <button class="toggle-btn" id="tog-hitemp" onclick="toggleLayer('hitemp')">
+          <span class="toggle-dot" style="background:#ff4400"></span>High Temp
+        </button>
+        <button class="toggle-btn" id="tog-lotemp" onclick="toggleLayer('lotemp')">
+          <span class="toggle-dot" style="background:#2277dd"></span>Low Temp
         </button>
       </div>
 
@@ -396,6 +405,22 @@
           <li class="loading"><div class="spinner"></div> Loading alerts&hellip;</li>
         </ul>
       </div>
+    </div>
+
+    <div class="accord-bar" onclick="toggleAccord('accord-spc1',this)">
+      <span class="accord-title">&#x1F525; SPC Fire Wx Outlook &mdash; Day 1</span>
+      <span class="accord-chevron">&#9654;</span>
+    </div>
+    <div class="accord-body" id="accord-spc1">
+      <img class="accord-img" src="https://www.spc.noaa.gov/products/fire_wx/day1otlk_fire.png" alt="SPC Day 1 Fire Weather Outlook">
+    </div>
+
+    <div class="accord-bar" onclick="toggleAccord('accord-spc2',this)">
+      <span class="accord-title">&#x1F525; SPC Fire Wx Outlook &mdash; Day 2</span>
+      <span class="accord-chevron">&#9654;</span>
+    </div>
+    <div class="accord-body" id="accord-spc2">
+      <img class="accord-img" src="https://www.spc.noaa.gov/products/fire_wx/day2otlk_fire.png" alt="SPC Day 2 Fire Weather Outlook">
     </div>
 
     <div class="accord-bar" onclick="toggleAccord('accord-fuels',this)">
@@ -453,7 +478,7 @@
 // ── Constants ─────────────────────────────────────────────────────────────
 const NWS_URL    = 'https://api.weather.gov/alerts/active?event=Red%20Flag%20Warning%2CFire%20Weather%20Watch&status=actual';
 const NWCG_URL   = 'https://fsapps.nwcg.gov/psp/rest/services/npsg/outlooks_forecast/MapServer';
-const SPC_URL    = 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer';
+const NDFD_WMS   = 'https://opengeo.ncep.noaa.gov/geoserver/conus/wms';
 const REFRESH_MS = 5 * 60 * 1000;
 
 // ── Layer state ───────────────────────────────────────────────────────────
@@ -461,18 +486,21 @@ const layerVisible  = {};
 const leafletLayers = {};
 
 const LAYER_META = {
-  rfw:   { dotColor: '#cc2200', defaultOn: true  },
-  fww:   { dotColor: '#ff8c00', defaultOn: true  },
-  spc1:  { dotColor: '#ff2200', defaultOn: false },
-  spc2:  { dotColor: '#ff5500', defaultOn: false },
-  spc3:  { dotColor: '#ff7700', defaultOn: false },
-  nwcg0: { dotColor: '#ffaa00', defaultOn: true  },
-  nwcg1: { dotColor: '#ffbb22', defaultOn: false },
-  nwcg2: { dotColor: '#ffbb22', defaultOn: false },
-  nwcg3: { dotColor: '#ffbb22', defaultOn: false },
-  nwcg4: { dotColor: '#ffbb22', defaultOn: false },
-  nwcg5: { dotColor: '#ffbb22', defaultOn: false },
-  nwcg6: { dotColor: '#ffbb22', defaultOn: false },
+  rfw:    { dotColor: '#cc2200', defaultOn: true  },
+  fww:    { dotColor: '#ff8c00', defaultOn: true  },
+  precip: { dotColor: '#4499ff', defaultOn: false },
+  wx:     { dotColor: '#88ccff', defaultOn: false },
+  minrh:  { dotColor: '#22cc77', defaultOn: false },
+  maxrh:  { dotColor: '#00ffaa', defaultOn: false },
+  hitemp: { dotColor: '#ff4400', defaultOn: false },
+  lotemp: { dotColor: '#2277dd', defaultOn: false },
+  nwcg0:  { dotColor: '#ffaa00', defaultOn: true  },
+  nwcg1:  { dotColor: '#ffbb22', defaultOn: false },
+  nwcg2:  { dotColor: '#ffbb22', defaultOn: false },
+  nwcg3:  { dotColor: '#ffbb22', defaultOn: false },
+  nwcg4:  { dotColor: '#ffbb22', defaultOn: false },
+  nwcg5:  { dotColor: '#ffbb22', defaultOn: false },
+  nwcg6:  { dotColor: '#ffbb22', defaultOn: false },
 };
 
 // ── Map init ──────────────────────────────────────────────────────────────
@@ -510,159 +538,14 @@ for (let i = 0; i < 7; i++) {
   });
 }
 
-// ── SPC layers ────────────────────────────────────────────────────────────
-// Create layers IMMEDIATELY so toggles always work.
-// Try multiple known NOAA ArcGIS service URLs for SPC fire weather outlooks.
-// ── SPC Fire Weather layers ───────────────────────────────────────────────
-// SPC_wx_outlks only has convective outlooks. Fire weather is a separate service.
-// We discover the correct service by scanning the NOAA services catalog.
-const NOAA_BASE = 'https://mapservices.weather.noaa.gov/vector/rest/services';
-
-function createSPCLayers(url, layerIds) {
-  ['spc1', 'spc2', 'spc3'].forEach((key, i) => {
-    if (leafletLayers[key] && layerVisible[key]) map.removeLayer(leafletLayers[key]);
-    const opts = { url: url, opacity: 0.75, transparent: true };
-    // Only set layers if we have a known ID; omitting lets esri-leaflet show service defaults
-    if (layerIds[i] !== null && layerIds[i] !== undefined) {
-      opts.layers = [layerIds[i]];
-    }
-    leafletLayers[key] = L.esri.dynamicMapLayer(opts);
-    leafletLayers[key].on('requesterror', function(e) {
-      console.warn(`SPC layer ${key} error:`, e);
-    });
-    if (layerVisible[key]) map.addLayer(leafletLayers[key]);
-  });
-  console.log('SPC layers created:', url, 'ids:', layerIds);
-}
-
-// Placeholder layers so toggles don't crash before discovery
-['spc1', 'spc2', 'spc3'].forEach(key => { leafletLayers[key] = L.layerGroup(); });
-
-// Discover the fire weather service from the NOAA catalog, then find layer IDs
-(async function initSPCLayers() {
-  try {
-    // Step 1: List all services under /outlooks to find fire weather service
-    console.log('SPC: scanning NOAA services catalog...');
-    const catResp = await fetch(NOAA_BASE + '/outlooks?f=json');
-    if (!catResp.ok) throw new Error('Catalog HTTP ' + catResp.status);
-    const catalog = await catResp.json();
-    const services = catalog.services || [];
-    console.log('SPC: available services:', services.map(s => s.name + ' (' + s.type + ')'));
-
-    // Find a fire-weather-related MapServer service
-    let fwService = services.find(s =>
-      /fire/i.test(s.name) && s.type === 'MapServer'
-    );
-    // Fallback: look in all folders
-    if (!fwService) {
-      const folders = catalog.folders || [];
-      for (const folder of folders) {
-        try {
-          const fResp = await fetch(NOAA_BASE + '/' + folder + '?f=json');
-          if (!fResp.ok) continue;
-          const fData = await fResp.json();
-          fwService = (fData.services || []).find(s =>
-            /fire/i.test(s.name) && s.type === 'MapServer'
-          );
-          if (fwService) break;
-        } catch (_) {}
-      }
-    }
-
-    if (!fwService) {
-      // Last resort: try known possible service names including the main SPC outlooks service
-      const guesses = [
-        NOAA_BASE + '/outlooks/SPC_wx_outlks_fwf/MapServer',
-        NOAA_BASE + '/fire_weather/SPC_fwOutlook/MapServer',
-        NOAA_BASE + '/outlooks/SPC_fwdy/MapServer',
-        SPC_URL,  // main SPC outlooks may contain fire weather as specific layers
-      ];
-      for (const url of guesses) {
-        try {
-          const r = await fetch(url + '?f=json');
-          if (r.ok) { fwService = { name: url.replace(NOAA_BASE + '/', ''), _url: url }; break; }
-        } catch (_) {}
-      }
-    }
-
-    const spcUrl = fwService?._url || (NOAA_BASE + '/' + fwService?.name + '/MapServer');
-    if (!fwService) {
-      console.warn('SPC: No fire weather service found in NOAA catalog.');
-      return;
-    }
-
-    console.log('SPC: using fire weather service:', spcUrl);
-
-    // Step 2: Get layers from the fire weather service
-    const layerResp = await fetch(spcUrl + '?f=json');
-    if (!layerResp.ok) throw new Error('Service HTTP ' + layerResp.status);
-    const info = await layerResp.json();
-    const all  = info.layers || [];
-
-    // Log full service metadata for debugging
-    console.log('SPC FW service info keys:', Object.keys(info));
-    console.log('SPC FW layers count:', all.length);
-    if (all.length > 0) {
-      console.log('SPC FW layers:', all.map(l => `  ${l.id}: ${l.name} (sub:${l.subLayerIds||'none'})`).join('\n'));
-    } else {
-      console.log('SPC FW: layers metadata empty — will try layer/0, /1, /2 directly');
-    }
-
-    let ids;
-    if (all.length > 0) {
-      // Find leaf layers (renderable)
-      let fireLayers = all.filter(l => (!l.subLayerIds || l.subLayerIds.length === 0));
-      const day1 = fireLayers.find(l => /day\s*1/i.test(l.name));
-      const day2 = fireLayers.find(l => /day\s*2/i.test(l.name));
-      const day3 = fireLayers.find(l => /day\s*3/i.test(l.name));
-      ids = [
-        day1?.id ?? fireLayers[0]?.id ?? 0,
-        day2?.id ?? fireLayers[1]?.id ?? 1,
-        day3?.id ?? fireLayers[2]?.id ?? 2,
-      ];
-    } else {
-      // Service exists but layers metadata is empty — try fetching individual layers
-      // to discover what IDs exist (probe up to 50 for larger services like SPC_wx_outlks)
-      const discovered = [];
-      for (let tryId = 0; tryId < 50; tryId++) {
-        try {
-          const lr = await fetch(spcUrl + '/' + tryId + '?f=json');
-          if (!lr.ok) continue;
-          const ld = await lr.json();
-          if (ld.id !== undefined && ld.name) {
-            discovered.push({ id: ld.id, name: ld.name });
-            console.log(`SPC FW discovered layer ${ld.id}: ${ld.name}`);
-          }
-        } catch (_) {}
-      }
-      if (discovered.length > 0) {
-        // Filter to fire-related layers if service has mixed content
-        const fireLayers = discovered.filter(l => /fire|fwf|critical.*fire/i.test(l.name));
-        const pool = fireLayers.length > 0 ? fireLayers : discovered;
-        console.log('SPC FW pool:', pool.map(l => `${l.id}: ${l.name}`));
-        // Try to match day 1/2/3
-        const d1 = pool.find(l => /day\s*1/i.test(l.name));
-        const d2 = pool.find(l => /day\s*2/i.test(l.name));
-        const d3 = pool.find(l => /day\s*3/i.test(l.name));
-        ids = [
-          d1?.id ?? pool[0]?.id ?? 0,
-          d2?.id ?? pool[1]?.id ?? 1,
-          d3?.id ?? pool[2]?.id ?? 2,
-        ];
-      } else {
-        // Last resort: assume standard IDs 0, 1, 2
-        console.log('SPC FW: no layers discovered, using default IDs 0, 1, 2');
-        ids = [0, 1, 2];
-      }
-    }
-
-    console.log('SPC fire weather layer IDs:', ids);
-    createSPCLayers(spcUrl, ids);
-
-  } catch (e) {
-    console.warn('SPC discovery failed:', e.message);
-  }
-})()
+// ── NWS NDFD WMS forecast layers ──────────────────────────────────────────
+const NDFD_OPTS = { format: 'image/png', transparent: true, opacity: 0.75, version: '1.1.1', attribution: 'NWS NDFD' };
+leafletLayers.precip = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: 'ndfd_conus_pop12' });
+leafletLayers.wx     = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: 'ndfd_conus_wx'    });
+leafletLayers.minrh  = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: 'ndfd_conus_minrh' });
+leafletLayers.maxrh  = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: 'ndfd_conus_maxrh' });
+leafletLayers.hitemp = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: 'ndfd_conus_maxt'  });
+leafletLayers.lotemp = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: 'ndfd_conus_mint'  });
 
 // ── Dynamic legend (must be defined before updateLegend is called) ─────────
 const LEGEND_ENTRIES = {
@@ -670,10 +553,13 @@ const LEGEND_ENTRIES = {
     { color: 'rgba(204,34,0,0.45)',  border: '#cc2200', label: 'Red Flag Warning' },
     { color: 'rgba(255,140,0,0.40)', border: '#ff8c00', label: 'Fire Weather Watch' },
   ],
-  spc: [
-    { color: 'rgba(180,0,0,0.55)',   border: '#cc0000', label: 'Extreme' },
-    { color: 'rgba(220,50,0,0.50)',  border: '#ff3300', label: 'Critical' },
-    { color: 'rgba(255,120,0,0.45)', border: '#ff7700', label: 'Elevated' },
+  ndfd: [
+    { color: '#4499ff', border: '#4499ff', label: 'Precip % (NWS NDFD)' },
+    { color: '#88ccff', border: '#88ccff', label: 'Precip Type' },
+    { color: '#22cc77', border: '#22cc77', label: 'Min RH' },
+    { color: '#00ffaa', border: '#00ffaa', label: 'Max RH' },
+    { color: '#ff4400', border: '#ff4400', label: 'High Temp' },
+    { color: '#2277dd', border: '#2277dd', label: 'Low Temp' },
   ],
   nwcg: [
     { color: '#d73027', border: '#d73027', label: 'High Fire Potential' },
@@ -683,15 +569,17 @@ const LEGEND_ENTRIES = {
   ],
 };
 
+const NDFD_LEGEND_MAP = { precip: 0, wx: 1, minrh: 2, maxrh: 3, hitemp: 4, lotemp: 5 };
+
 function updateLegend() {
   const bar   = document.getElementById('legend-bar');
   const items = [];
 
   if (layerVisible.rfw) items.push(LEGEND_ENTRIES.nws[0]);
   if (layerVisible.fww) items.push(LEGEND_ENTRIES.nws[1]);
-  if (layerVisible.spc1 || layerVisible.spc2 || layerVisible.spc3) {
-    LEGEND_ENTRIES.spc.forEach(e => items.push(e));
-  }
+  Object.keys(NDFD_LEGEND_MAP).forEach(k => {
+    if (layerVisible[k]) items.push(LEGEND_ENTRIES.ndfd[NDFD_LEGEND_MAP[k]]);
+  });
   if (Object.keys(LAYER_META).filter(k => k.startsWith('nwcg')).some(k => layerVisible[k])) {
     LEGEND_ENTRIES.nwcg.forEach(e => items.push(e));
   }
@@ -949,11 +837,12 @@ function refreshAll() {
   document.getElementById('alert-counts').innerHTML =
     '<div class="loading" style="padding:0"><div class="spinner"></div></div>';
   fetchAlerts();
-  // Redraw active esri-leaflet dynamic layers
+  // Redraw active map layers
   Object.keys(LAYER_META).forEach(key => {
-    if (layerVisible[key] && leafletLayers[key] && leafletLayers[key].refresh) {
-      leafletLayers[key].refresh();
-    }
+    const lyr = leafletLayers[key];
+    if (!layerVisible[key] || !lyr) return;
+    if (lyr.refresh) lyr.refresh();          // esri-leaflet dynamic layers
+    else if (lyr.redraw) lyr.redraw();       // Leaflet WMS tile layers
   });
 }
 
