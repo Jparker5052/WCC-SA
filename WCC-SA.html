@@ -521,12 +521,12 @@ const NOAA_BASE = 'https://mapservices.weather.noaa.gov/vector/rest/services';
 function createSPCLayers(url, layerIds) {
   ['spc1', 'spc2', 'spc3'].forEach((key, i) => {
     if (leafletLayers[key] && layerVisible[key]) map.removeLayer(leafletLayers[key]);
-    leafletLayers[key] = L.esri.dynamicMapLayer({
-      url: url,
-      layers: layerIds[i] !== null ? [layerIds[i]] : [],
-      opacity: 0.75,
-      transparent: true,
-    });
+    const opts = { url: url, opacity: 0.75, transparent: true };
+    // Only set layers if we have a known ID; omitting lets esri-leaflet show service defaults
+    if (layerIds[i] !== null && layerIds[i] !== undefined) {
+      opts.layers = [layerIds[i]];
+    }
+    leafletLayers[key] = L.esri.dynamicMapLayer(opts);
     leafletLayers[key].on('requesterror', function(e) {
       console.warn(`SPC layer ${key} error:`, e);
     });
@@ -570,11 +570,12 @@ function createSPCLayers(url, layerIds) {
     }
 
     if (!fwService) {
-      // Last resort: try known possible service names
+      // Last resort: try known possible service names including the main SPC outlooks service
       const guesses = [
         NOAA_BASE + '/outlooks/SPC_wx_outlks_fwf/MapServer',
         NOAA_BASE + '/fire_weather/SPC_fwOutlook/MapServer',
         NOAA_BASE + '/outlooks/SPC_fwdy/MapServer',
+        SPC_URL,  // main SPC outlooks may contain fire weather as specific layers
       ];
       for (const url of guesses) {
         try {
@@ -598,21 +599,62 @@ function createSPCLayers(url, layerIds) {
     const info = await layerResp.json();
     const all  = info.layers || [];
 
-    console.log('SPC FW layers:', all.map(l => `  ${l.id}: ${l.name} (sub:${l.subLayerIds||'none'})`).join('\n'));
+    // Log full service metadata for debugging
+    console.log('SPC FW service info keys:', Object.keys(info));
+    console.log('SPC FW layers count:', all.length);
+    if (all.length > 0) {
+      console.log('SPC FW layers:', all.map(l => `  ${l.id}: ${l.name} (sub:${l.subLayerIds||'none'})`).join('\n'));
+    } else {
+      console.log('SPC FW: layers metadata empty — will try layer/0, /1, /2 directly');
+    }
 
-    // Find leaf layers (renderable) — prefer "critical" but take anything fire-related
-    let fireLayers = all.filter(l => (!l.subLayerIds || l.subLayerIds.length === 0));
-    // Try to find day 1, 2, 3 by name
-    const day1 = fireLayers.find(l => /day\s*1/i.test(l.name));
-    const day2 = fireLayers.find(l => /day\s*2/i.test(l.name));
-    const day3 = fireLayers.find(l => /day\s*3/i.test(l.name));
-
-    // Fallback: just use first 3 leaf layers
-    const ids = [
-      day1?.id ?? fireLayers[0]?.id ?? null,
-      day2?.id ?? fireLayers[1]?.id ?? null,
-      day3?.id ?? fireLayers[2]?.id ?? null,
-    ];
+    let ids;
+    if (all.length > 0) {
+      // Find leaf layers (renderable)
+      let fireLayers = all.filter(l => (!l.subLayerIds || l.subLayerIds.length === 0));
+      const day1 = fireLayers.find(l => /day\s*1/i.test(l.name));
+      const day2 = fireLayers.find(l => /day\s*2/i.test(l.name));
+      const day3 = fireLayers.find(l => /day\s*3/i.test(l.name));
+      ids = [
+        day1?.id ?? fireLayers[0]?.id ?? 0,
+        day2?.id ?? fireLayers[1]?.id ?? 1,
+        day3?.id ?? fireLayers[2]?.id ?? 2,
+      ];
+    } else {
+      // Service exists but layers metadata is empty — try fetching individual layers
+      // to discover what IDs exist (probe up to 50 for larger services like SPC_wx_outlks)
+      const discovered = [];
+      for (let tryId = 0; tryId < 50; tryId++) {
+        try {
+          const lr = await fetch(spcUrl + '/' + tryId + '?f=json');
+          if (!lr.ok) continue;
+          const ld = await lr.json();
+          if (ld.id !== undefined && ld.name) {
+            discovered.push({ id: ld.id, name: ld.name });
+            console.log(`SPC FW discovered layer ${ld.id}: ${ld.name}`);
+          }
+        } catch (_) {}
+      }
+      if (discovered.length > 0) {
+        // Filter to fire-related layers if service has mixed content
+        const fireLayers = discovered.filter(l => /fire|fwf|critical.*fire/i.test(l.name));
+        const pool = fireLayers.length > 0 ? fireLayers : discovered;
+        console.log('SPC FW pool:', pool.map(l => `${l.id}: ${l.name}`));
+        // Try to match day 1/2/3
+        const d1 = pool.find(l => /day\s*1/i.test(l.name));
+        const d2 = pool.find(l => /day\s*2/i.test(l.name));
+        const d3 = pool.find(l => /day\s*3/i.test(l.name));
+        ids = [
+          d1?.id ?? pool[0]?.id ?? 0,
+          d2?.id ?? pool[1]?.id ?? 1,
+          d3?.id ?? pool[2]?.id ?? 2,
+        ];
+      } else {
+        // Last resort: assume standard IDs 0, 1, 2
+        console.log('SPC FW: no layers discovered, using default IDs 0, 1, 2');
+        ids = [0, 1, 2];
+      }
+    }
 
     console.log('SPC fire weather layer IDs:', ids);
     createSPCLayers(spcUrl, ids);
