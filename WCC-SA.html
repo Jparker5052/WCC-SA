@@ -244,10 +244,17 @@
       flex: 1;
       min-height: 0;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
+      position: relative;
     }
-    .spc-map-wrap iframe { flex: 1; width: 100%; border: none; border-radius: 4px; min-height: 0; }
+    /* Crop digital.weather.gov chrome — offset iframe up to hide the ~55px top nav bar */
+    .spc-map-wrap iframe {
+      position: absolute;
+      top: -55px;
+      left: 0;
+      width: 100%;
+      height: calc(100% + 55px);
+      border: none;
+    }
 
     .spc-table-wrap { flex: 1; min-height: 0; overflow: auto; }
     .spc-table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
@@ -546,7 +553,7 @@
         <a class="card-link" href="https://fsapps.nwcg.gov/psp/rest/services/npsg/outlooks_forecast/MapServer" target="_blank">MapServer &#8599;</a>
       </div>
       <div class="tabs-nav" id="nwcg-tabs-nav"></div>
-      <div id="nwcg-panels" style="flex:1; min-height:0; display:flex; flex-direction:column;"></div>
+      <div id="nwcg-map" style="flex:1; min-height:0;"></div>
       <div class="nwcg-legend-bar" id="nwcg-legend-bar">
         <span style="color:var(--muted);font-size:.68rem">Legend:</span>
         <span class="loading" style="padding:0"><span class="spinner" style="width:12px;height:12px;border-width:1.5px"></span></span>
@@ -623,6 +630,7 @@
 <script>
 const NWS_URL   = 'https://api.weather.gov/alerts/active?event=Red%20Flag%20Warning%2CFire%20Weather%20Watch&status=actual';
 const NWCG_MS   = 'https://fsapps.nwcg.gov/psp/rest/services/npsg/outlooks_forecast/MapServer';
+const NWCG_WMS  = 'https://fsapps.nwcg.gov/psp/services/npsg/outlooks_forecast/MapServer/WMSServer';
 const REFRESH_MS = 5 * 60 * 1000;
 
 const NWCG_DAYS = [
@@ -635,49 +643,37 @@ const NWCG_DAYS = [
   { label: 'Day 7', id: 6 },
 ];
 
-const NWCG_BBOX = '-124.84,17.6,-64.51,49.4';
-const NWCG_W = 900;
-const NWCG_H = 480;
+// Leaflet map for NWCG outlook
+const nwcgMap = L.map('nwcg-map', { center: [39.5, -98.35], zoom: 4, zoomControl: true, attributionControl: false });
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  subdomains: 'abcd', maxZoom: 19
+}).addTo(nwcgMap);
 
-function nwcgExportUrl(dayIndex) {
-  // Hide every other day's layer so basemap/reference layers remain visible
-  const hideIds = NWCG_DAYS.filter((_, j) => j !== dayIndex).map(d => d.id).join(',');
-  const layerParam = hideIds ? `&layers=hide:${hideIds}` : '';
-  return `${NWCG_MS}/export?bbox=${NWCG_BBOX}&bboxSR=4326&imageSR=4326&size=${NWCG_W},${NWCG_H}&format=png32&f=image&dpi=96&transparent=false${layerParam}`;
+let nwcgWmsLayer = null;
+
+function showNWCGDay(dayIdx, btn) {
+  document.querySelectorAll('#nwcg-tabs-nav .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (nwcgWmsLayer) nwcgMap.removeLayer(nwcgWmsLayer);
+  nwcgWmsLayer = L.tileLayer.wms(NWCG_WMS, {
+    layers: String(dayIdx),
+    format: 'image/png',
+    transparent: true,
+    opacity: 0.85,
+  }).addTo(nwcgMap);
 }
 
 (function buildNWCGTabs() {
-  const nav    = document.getElementById('nwcg-tabs-nav');
-  const panels = document.getElementById('nwcg-panels');
-
+  const nav = document.getElementById('nwcg-tabs-nav');
   NWCG_DAYS.forEach((day, i) => {
     const btn = document.createElement('button');
     btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
     btn.textContent = day.label;
-    btn.onclick = () => showTab('nwcg', `nwcg-day${i}`, btn);
+    btn.onclick = () => showNWCGDay(i, btn);
     nav.appendChild(btn);
-
-    const panel = document.createElement('div');
-    panel.className = 'tab-panel' + (i === 0 ? ' active' : '');
-    panel.id = `nwcg-day${i}`;
-
-    const wrap = document.createElement('div');
-    wrap.className = 'nwcg-img-wrap';
-
-    const img = document.createElement('img');
-    img.src = nwcgExportUrl(i);
-    img.alt = `NWCG ${day.label} Fire Weather Outlook`;
-    img.onerror = function() {
-      wrap.innerHTML = `<div class="nwcg-img-error">
-        <div>Map image unavailable</div>
-        <a href="https://fsapps.nwcg.gov/psp/rest/services/npsg/outlooks_forecast/MapServer" target="_blank">View on NWCG &#8599;</a>
-      </div>`;
-    };
-
-    wrap.appendChild(img);
-    panel.appendChild(wrap);
-    panels.appendChild(panel);
   });
+  showNWCGDay(0, nav.querySelector('.tab-btn'));
+  requestAnimationFrame(() => nwcgMap.invalidateSize());
 })();
 
 const map = L.map('map', { center: [39.5, -98.35], zoom: 4 });
@@ -960,12 +956,7 @@ function refreshAll() {
   document.getElementById('alert-counts').innerHTML =
     '<div class="loading" style="padding:0"><div class="spinner"></div></div>';
   fetchAlerts();
-  NWCG_DAYS.forEach((day, i) => {
-    const wrap = document.querySelector(`#nwcg-day${i} .nwcg-img-wrap`);
-    if (!wrap) return;
-    const img = wrap.querySelector('img');
-    if (img) img.src = nwcgExportUrl(i) + `&_t=${Date.now()}`;
-  });
+  if (nwcgWmsLayer) nwcgWmsLayer.redraw();
 }
 
 const ttStyle = document.createElement('style');
