@@ -528,14 +528,13 @@
     <div class="card">
       <div class="card-head">
         <h2>&#x1F332; NWCG 7-Day Fire Weather Outlook</h2>
-        <a class="card-link" href="https://fsapps.nwcg.gov/psp/npsg/forecast/home/staticmaps" target="_blank">Static Maps &#8599;</a>
+        <a class="card-link" href="https://fsapps.nwcg.gov/psp/arcgis/rest/services/npsg/outlooks_forecast/MapServer" target="_blank">MapServer &#8599;</a>
       </div>
       <div class="tabs-nav" id="nwcg-tabs-nav"></div>
       <div id="nwcg-panels" style="flex:1; min-height:0; display:flex; flex-direction:column;"></div>
       <div class="source-note">
-        <a href="https://fsapps.nwcg.gov/psp/npsg/forecast/home/staticmaps" target="_blank">NWCG NPSG Forecast Static Maps &#8599;</a>
-        &bull; Updated each weekday by mid-afternoon MT &bull;
-        <a href="https://fsapps.nwcg.gov/psp/arcgis/rest/services/npsg/outlooks_forecast/MapServer" target="_blank">MapServer &#8599;</a>
+        <a href="https://fsapps.nwcg.gov/psp/arcgis/rest/services/npsg/outlooks_forecast/MapServer" target="_blank">NWCG NPSG Forecast MapServer &#8599;</a>
+        &bull; Updated each weekday by mid-afternoon MT
       </div>
     </div>
 
@@ -558,7 +557,7 @@
 <footer>
   Data: <a href="https://api.weather.gov" target="_blank">NWS API</a> &bull;
   <a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank">NOAA SPC</a> &bull;
-  <a href="https://fsapps.nwcg.gov/psp/npsg/forecast/home/staticmaps" target="_blank">NWCG NPSG</a>
+  <a href="https://fsapps.nwcg.gov/psp/arcgis/rest/services/npsg/outlooks_forecast/MapServer" target="_blank">NWCG NPSG</a>
   <span class="disclaimer">For situational awareness only. Always consult official sources and local authorities for emergency decisions.</span>
 </footer>
 
@@ -626,7 +625,7 @@ function nwcgExportUrl(layerId) {
     img.onerror = function() {
       wrap.innerHTML = `<div class="nwcg-img-error">
         <div>Map image unavailable</div>
-        <a href="https://fsapps.nwcg.gov/psp/npsg/forecast/home/staticmaps" target="_blank">View on NWCG &#8599;</a>
+        <a href="https://fsapps.nwcg.gov/psp/arcgis/rest/services/npsg/outlooks_forecast/MapServer" target="_blank">View on NWCG &#8599;</a>
       </div>`;
     };
 
