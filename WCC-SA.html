@@ -19,19 +19,10 @@
       --muted:       #8b949e;
       --fire:        #ff6b35;
       --rfw-color:   #cc2200;
-      --rfw-fill:    rgba(204, 34,  0,   0.40);
       --fww-color:   #ff8c00;
-      --fww-fill:    rgba(255, 140, 0,   0.35);
-      --extreme-bg:  rgba(139, 0,   0,   0.30);
-      --extreme-txt: #ff4444;
-      --critical-bg: rgba(204, 34,  0,   0.25);
-      --critical-txt:#ff6633;
-      --elevated-bg: rgba(255, 140, 0,   0.20);
-      --elevated-txt:#ffaa44;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     html, body { height: 100%; }
 
     body {
@@ -59,10 +50,8 @@
 
     .header-left { display: flex; align-items: center; gap: 10px; }
     .fire-icon { font-size: 1.5rem; line-height: 1; }
-
     header h1 { font-size: 1.1rem; font-weight: 700; line-height: 1.2; }
     header h1 span { display: block; font-size: 0.7rem; font-weight: 400; color: var(--muted); }
-
     .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .data-sources { font-size: 0.7rem; color: var(--muted); }
 
@@ -93,19 +82,14 @@
       min-height: 0;
       padding: 8px;
       display: grid;
-      grid-template-rows: 1fr 1fr;
+      grid-template-columns: 4fr 2fr;
       gap: 8px;
       overflow: hidden;
     }
 
-    .top-row { display: grid; grid-template-columns: 3fr 2fr; gap: 8px; min-height: 0; }
-    .bottom-row { display: grid; grid-template-columns: 5fr 3fr; gap: 8px; min-height: 0; }
-
     @media (max-width: 1100px) {
       body { overflow: auto; height: auto; }
-      main { grid-template-rows: auto auto; overflow: visible; }
-      .top-row    { grid-template-columns: 1fr; }
-      .bottom-row { grid-template-columns: 1fr; }
+      main { grid-template-columns: 1fr; overflow: visible; }
     }
 
     .card {
@@ -128,12 +112,95 @@
       gap: 8px;
       flex-shrink: 0;
     }
-
     .card-head h2 { font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
-
     .card-link { color: var(--fire); font-size: 0.7rem; text-decoration: none; white-space: nowrap; }
     .card-link:hover { text-decoration: underline; }
 
+    /* ── Layer toggle panel ─────────────────────────────────── */
+    .layer-panel {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .layer-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 10px;
+      border-right: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .layer-group:last-child { border-right: none; }
+
+    .layer-group-label {
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      white-space: nowrap;
+      margin-right: 2px;
+    }
+
+    .toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.68rem;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      transition: all .15s;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .toggle-btn:hover { color: var(--text); border-color: #555; }
+    .toggle-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Map ────────────────────────────────────────────────── */
+    #map { flex: 1; min-height: 0; width: 100%; }
+
+    .legend-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 12px;
+      background: var(--bg-alt);
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      min-height: 26px;
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .legend-swatch {
+      width: 16px; height: 9px;
+      border-radius: 2px;
+      border: 1px solid rgba(255,255,255,.2);
+      flex-shrink: 0;
+    }
+
+    .source-note {
+      padding: 4px 12px;
+      font-size: 0.65rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      background: var(--bg-alt);
+      flex-shrink: 0;
+    }
+    .source-note a { color: var(--fire); text-decoration: none; }
+    .source-note a:hover { text-decoration: underline; }
+
+    /* ── Right panel ────────────────────────────────────────── */
     .accord-bar {
       display: flex;
       align-items: center;
@@ -154,184 +221,7 @@
     .accord-body.open { display: block; }
     .accord-img { width: 100%; display: block; }
 
-    .map-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-
-    #map { flex: 1; min-height: 0; width: 100%; }
-
-    .map-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 6px 14px;
-      background: var(--bg-alt);
-      border-top: 1px solid var(--border);
-      flex-wrap: wrap;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    .legend { display: flex; gap: 14px; flex-wrap: wrap; }
-    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.7rem; color: var(--muted); }
-
-    .swatch { width: 18px; height: 10px; border-radius: 2px; border: 1px solid rgba(255,255,255,.25); }
-    .swatch-rfw { background: var(--rfw-fill); border-color: var(--rfw-color); }
-    .swatch-fww { background: var(--fww-fill); border-color: var(--fww-color); }
-
-    .alert-counts { display: flex; gap: 14px; }
-    .count-badge { display: flex; align-items: baseline; gap: 4px; }
-    .count-num { font-size: 1.1rem; font-weight: 700; }
-    .count-num.red    { color: var(--rfw-color); }
-    .count-num.orange { color: var(--fww-color); }
-    .count-label { font-size: 0.7rem; color: var(--muted); }
-
-    .layer-toggles {
-      display: flex;
-      gap: 8px;
-      padding: 5px 14px;
-      border-top: 1px solid var(--border);
-      background: var(--bg-card);
-      flex-wrap: wrap;
-      flex-shrink: 0;
-    }
-
-    .toggle-btn {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 3px 9px;
-      border-radius: 14px;
-      font-size: 0.7rem;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--muted);
-      transition: all .2s;
-      user-select: none;
-    }
-
-    .toggle-btn.active-rfw  { border-color: var(--rfw-color);  color: var(--text); background: rgba(204,34,0,.15); }
-    .toggle-btn.active-fww  { border-color: var(--fww-color);  color: var(--text); background: rgba(255,140,0,.12); }
-    .toggle-dot { width: 7px; height: 7px; border-radius: 50%; }
-
-    .tabs-nav {
-      display: flex;
-      background: var(--bg-card);
-      border-bottom: 1px solid var(--border);
-      overflow-x: auto;
-      flex-shrink: 0;
-    }
-
-    .tab-btn {
-      padding: 7px 14px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: var(--muted);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      white-space: nowrap;
-      transition: all .2s;
-      background: transparent;
-      border-top: none;
-      border-left: none;
-      border-right: none;
-    }
-    .tab-btn.active { color: var(--fire); border-bottom-color: var(--fire); }
-
-    .tab-panel { display: none; flex: 1; flex-direction: column; min-height: 0; }
-    .tab-panel.active { display: flex; }
-
-    .spc-map-wrap {
-      flex: 1;
-      min-height: 0;
-      overflow: hidden;
-      position: relative;
-    }
-    /* Crop digital.weather.gov chrome — offset iframe up to hide the ~55px top nav bar */
-    .spc-map-wrap iframe {
-      position: absolute;
-      top: -55px;
-      left: 0;
-      width: 100%;
-      height: calc(100% + 55px);
-      border: none;
-    }
-
-    .spc-table-wrap { flex: 1; min-height: 0; overflow: auto; }
-    .spc-table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-
-    .spc-table-wrap th {
-      background: var(--bg-alt);
-      color: var(--muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.65rem;
-      letter-spacing: .05em;
-      padding: 7px 10px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-      position: sticky;
-      top: 0;
-    }
-    .spc-table-wrap td { padding: 7px 10px; border-bottom: 1px solid rgba(48,54,61,.5); vertical-align: middle; }
-    .spc-table-wrap tr:hover td { background: rgba(255,255,255,.025); }
-
-    .cat-badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-    .cat-extreme  { background: var(--extreme-bg);  color: var(--extreme-txt);  border: 1px solid rgba(139,0,0,.5); }
-    .cat-critical { background: var(--critical-bg); color: var(--critical-txt); border: 1px solid rgba(204,34,0,.4); }
-    .cat-elevated { background: var(--elevated-bg); color: var(--elevated-txt); border: 1px solid rgba(255,140,0,.35); }
-    .cat-none     { background: rgba(139,148,158,.15); color: var(--muted); border: 1px solid rgba(139,148,158,.3); }
-
-    .source-note {
-      padding: 5px 12px;
-      font-size: 0.67rem;
-      color: var(--muted);
-      border-top: 1px solid var(--border);
-      background: var(--bg-alt);
-      flex-shrink: 0;
-    }
-    .source-note a { color: var(--fire); text-decoration: none; }
-    .source-note a:hover { text-decoration: underline; }
-
-    .nwcg-img-wrap {
-      flex: 1;
-      min-height: 0;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px;
-      background: #111;
-    }
-    .nwcg-img-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; border-radius: 3px; }
-
-    .nwcg-img-error {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      color: var(--muted);
-      font-size: 0.8rem;
-      text-align: center;
-      padding: 20px;
-    }
-    .nwcg-img-error a { color: var(--fire); }
-
-    .nwcg-legend-bar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 5px 12px;
-      background: var(--bg-alt);
-      border-top: 1px solid var(--border);
-      flex-wrap: wrap;
-      flex-shrink: 0;
-      min-height: 26px;
-    }
-    .nwcg-legend-swatch { width: 18px; height: 10px; border-radius: 2px; border: 1px solid rgba(255,255,255,.2); flex-shrink: 0; }
-
-    .alerts-scroll { overflow-y: auto; max-height: 280px; }
+    .alerts-scroll { overflow-y: auto; max-height: 260px; }
     .alerts-scroll::-webkit-scrollbar { width: 4px; }
     .alerts-scroll::-webkit-scrollbar-track { background: var(--bg-card); }
     .alerts-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -339,129 +229,91 @@
     .alert-item { padding: 9px 12px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .15s; }
     .alert-item:last-child { border-bottom: none; }
     .alert-item:hover { background: rgba(255,255,255,.03); }
-
     .alert-item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 5px; margin-bottom: 4px; }
-
     .evt-badge { font-size: 0.62rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; white-space: nowrap; }
     .evt-rfw { background: rgba(204,34,0,.2);  color: #ff4433; border: 1px solid rgba(204,34,0,.4); }
     .evt-fww { background: rgba(255,140,0,.18); color: #ffaa33; border: 1px solid rgba(255,140,0,.4); }
-
     .alert-expires { font-size: 0.65rem; color: var(--muted); white-space: nowrap; }
     .alert-area { font-size: 0.77rem; font-weight: 600; color: var(--text); margin-bottom: 2px; line-height: 1.3; }
     .alert-office { font-size: 0.68rem; color: var(--muted); margin-bottom: 3px; }
-
     .alert-headline {
-      font-size: 0.7rem;
-      color: var(--muted);
-      line-height: 1.4;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      font-size: 0.7rem; color: var(--muted); line-height: 1.4;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
 
-    .loading { display: flex; align-items: center; justify-content: center; padding: 20px; gap: 8px; color: var(--muted); font-size: 0.8rem; }
+    /* SPC Table (inside accordion) */
+    .spc-table-wrap { overflow-x: auto; }
+    .spc-table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+    .spc-table-wrap th {
+      background: var(--bg-alt); color: var(--muted); font-weight: 600;
+      text-transform: uppercase; font-size: 0.65rem; letter-spacing: .05em;
+      padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .spc-table-wrap td { padding: 7px 10px; border-bottom: 1px solid rgba(48,54,61,.5); vertical-align: middle; }
+    .spc-table-wrap tr:hover td { background: rgba(255,255,255,.025); }
 
+    .cat-badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+    .cat-extreme  { background: rgba(139,0,0,.3);   color: #ff4444; border: 1px solid rgba(139,0,0,.5); }
+    .cat-critical { background: rgba(204,34,0,.25);  color: #ff6633; border: 1px solid rgba(204,34,0,.4); }
+    .cat-elevated { background: rgba(255,140,0,.2);  color: #ffaa44; border: 1px solid rgba(255,140,0,.35); }
+    .cat-none     { background: rgba(139,148,158,.15); color: var(--muted); border: 1px solid rgba(139,148,158,.3); }
+
+    /* ── Misc ───────────────────────────────────────────────── */
+    .loading { display: flex; align-items: center; justify-content: center; padding: 20px; gap: 8px; color: var(--muted); font-size: 0.8rem; }
     .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(255,107,53,.3);
-      border-top-color: var(--fire);
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
-      flex-shrink: 0;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,107,53,.3); border-top-color: var(--fire);
+      border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-
     .error-banner {
-      background: rgba(204,34,0,.1);
-      border: 1px solid rgba(204,34,0,.3);
-      border-radius: 6px;
-      padding: 10px 14px;
-      margin: 10px;
-      font-size: 0.75rem;
-      color: #ff6633;
+      background: rgba(204,34,0,.1); border: 1px solid rgba(204,34,0,.3);
+      border-radius: 6px; padding: 10px 14px; margin: 10px;
+      font-size: 0.75rem; color: #ff6633;
     }
-
     .no-data { padding: 20px; text-align: center; font-size: 0.8rem; color: var(--muted); }
 
+    /* ── Modal ──────────────────────────────────────────────── */
     .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.75);
-      z-index: 10000;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.75); z-index: 10000;
+      align-items: center; justify-content: center; padding: 20px;
     }
     .modal-overlay.open { display: flex; }
-
     .modal {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      max-width: 640px;
-      width: 100%;
-      max-height: 85vh;
-      overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; max-width: 640px; width: 100%;
+      max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.6);
     }
-
     .modal-head {
-      padding: 14px 18px 12px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px;
-      position: sticky;
-      top: 0;
-      background: var(--bg-card);
-      z-index: 1;
+      padding: 14px 18px 12px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+      position: sticky; top: 0; background: var(--bg-card); z-index: 1;
     }
     .modal-head h3 { font-size: 0.95rem; font-weight: 600; line-height: 1.3; margin-top: 5px; }
-
     .modal-close {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 1.3rem;
-      cursor: pointer;
-      line-height: 1;
-      padding: 2px 5px;
-      border-radius: 4px;
-      flex-shrink: 0;
+      background: none; border: none; color: var(--muted);
+      font-size: 1.3rem; cursor: pointer; line-height: 1;
+      padding: 2px 5px; border-radius: 4px; flex-shrink: 0;
     }
     .modal-close:hover { color: var(--text); background: var(--bg-alt); }
-
     .modal-body { padding: 16px 18px; }
-
     .modal-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 14px; }
     .meta-box { background: var(--bg-alt); border-radius: 5px; padding: 8px 10px; }
     .meta-lbl { font-size: 0.62rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 2px; }
     .meta-val { font-size: 0.8rem; font-weight: 500; color: var(--text); }
-
     .modal-headline { font-weight: 600; font-size: 0.84rem; color: var(--text); margin-bottom: 10px; }
     .modal-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.7; white-space: pre-wrap; margin-bottom: 12px; }
     .modal-instruction {
-      background: rgba(255,107,53,.07);
-      border-left: 3px solid var(--fire);
-      padding: 9px 12px;
-      border-radius: 0 5px 5px 0;
-      font-size: 0.78rem;
-      color: var(--text);
-      line-height: 1.6;
-      white-space: pre-wrap;
+      background: rgba(255,107,53,.07); border-left: 3px solid var(--fire);
+      padding: 9px 12px; border-radius: 0 5px 5px 0;
+      font-size: 0.78rem; color: var(--text); line-height: 1.6; white-space: pre-wrap;
     }
 
     footer {
-      text-align: center;
-      padding: 6px 14px;
-      font-size: 0.67rem;
-      color: var(--muted);
-      border-top: 1px solid var(--border);
-      flex-shrink: 0;
+      text-align: center; padding: 5px 14px; font-size: 0.65rem;
+      color: var(--muted); border-top: 1px solid var(--border); flex-shrink: 0;
     }
     footer a { color: var(--fire); text-decoration: none; }
     footer a:hover { text-decoration: underline; }
@@ -487,116 +339,118 @@
 
 <main>
 
-  <div class="top-row">
-
-    <div class="card">
-      <div class="card-head">
-        <h2>&#x1F5FA;&#xFE0F; NWS Active Fire Weather Alerts</h2>
-        <span id="alert-count-header" style="font-size:.7rem; color:var(--muted)"></span>
-      </div>
-      <div class="map-body">
-        <div class="layer-toggles">
-          <button class="toggle-btn active-rfw" id="tog-rfw" onclick="toggleLayer('rfw')">
-            <span class="toggle-dot" style="background:var(--rfw-color)"></span> Red Flag Warnings
-          </button>
-          <button class="toggle-btn active-fww" id="tog-fww" onclick="toggleLayer('fww')">
-            <span class="toggle-dot" style="background:var(--fww-color)"></span> Fire Weather Watches
-          </button>
-        </div>
-        <div id="map"></div>
-        <div class="map-footer">
-          <div class="legend">
-            <div class="legend-item"><div class="swatch swatch-rfw"></div> Red Flag Warning</div>
-            <div class="legend-item"><div class="swatch swatch-fww"></div> Fire Weather Watch</div>
-          </div>
-          <div class="alert-counts" id="alert-counts">
-            <div class="loading" style="padding:0"><div class="spinner"></div></div>
-          </div>
-        </div>
-      </div>
+  <!-- ── Unified Map Card ─────────────────────────────────── -->
+  <div class="card">
+    <div class="card-head">
+      <h2>&#x1F5FA;&#xFE0F; Fire Weather Situational Awareness Map</h2>
+      <span id="alert-count-header" style="font-size:.7rem; color:var(--muted)"></span>
     </div>
 
-    <div class="card">
-      <div class="card-head">
-        <h2>&#x1F4CA; NWS Fire Weather Forecast</h2>
-        <a class="card-link" href="https://digital.weather.gov/?zoom=4&lat=37&lon=-96.5&layers=F00BTTTFFTT&region=0&element=38&mxmz=false&barbs=false&subl=TFFFFF&units=english&wunits=nautical&coords=latlon&tunits=localt" target="_blank">Full Page &#8599;</a>
+    <!-- Layer toggle panel -->
+    <div class="layer-panel" id="layer-panel">
+
+      <div class="layer-group">
+        <span class="layer-group-label">NWS Alerts</span>
+        <button class="toggle-btn" id="tog-rfw" onclick="toggleLayer('rfw')">
+          <span class="toggle-dot" style="background:#cc2200"></span>Red Flag Warning
+        </button>
+        <button class="toggle-btn" id="tog-fww" onclick="toggleLayer('fww')">
+          <span class="toggle-dot" style="background:#ff8c00"></span>Fire Weather Watch
+        </button>
       </div>
-      <div class="tabs-nav">
-        <button class="tab-btn active" onclick="showTab('spc','spc-map',this)">Map</button>
-        <button class="tab-btn" onclick="showTab('spc','spc-table',this)">Table</button>
+
+      <div class="layer-group">
+        <span class="layer-group-label">SPC Critical Fire Wx</span>
+        <button class="toggle-btn" id="tog-spc1" onclick="toggleLayer('spc1')">
+          <span class="toggle-dot" style="background:#ff2200"></span>Day 1
+        </button>
+        <button class="toggle-btn" id="tog-spc2" onclick="toggleLayer('spc2')">
+          <span class="toggle-dot" style="background:#ff5500"></span>Day 2
+        </button>
+        <button class="toggle-btn" id="tog-spc3" onclick="toggleLayer('spc3')">
+          <span class="toggle-dot" style="background:#ff7700"></span>Day 3
+        </button>
       </div>
-      <div class="tab-panel active" id="spc-map">
-        <div class="spc-map-wrap">
-          <iframe src="https://digital.weather.gov/?zoom=4&lat=37&lon=-96.5&layers=F00BTTTFFTT&region=0&element=38&mxmz=false&barbs=false&subl=TFFFFF&units=english&wunits=nautical&coords=latlon&tunits=localt"
-                  title="NWS Digital Fire Weather Forecast"
-                  loading="lazy"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox">
-          </iframe>
-        </div>
-        <div class="source-note">NWS Digital Fire Weather Forecast &mdash; <a href="https://digital.weather.gov/?zoom=4&lat=37&lon=-96.5&layers=F00BTTTFFTT&region=0&element=38&mxmz=false&barbs=false&subl=TFFFFF&units=english&wunits=nautical&coords=latlon&tunits=localt" target="_blank">digital.weather.gov &#8599;</a></div>
+
+      <div class="layer-group">
+        <span class="layer-group-label">NWCG Sig. Fire Potential</span>
+        <button class="toggle-btn" id="tog-nwcg0" onclick="toggleLayer('nwcg0')">
+          <span class="toggle-dot" style="background:#ffaa00"></span>Day 1
+        </button>
+        <button class="toggle-btn" id="tog-nwcg1" onclick="toggleLayer('nwcg1')">Day 2</button>
+        <button class="toggle-btn" id="tog-nwcg2" onclick="toggleLayer('nwcg2')">Day 3</button>
+        <button class="toggle-btn" id="tog-nwcg3" onclick="toggleLayer('nwcg3')">Day 4</button>
+        <button class="toggle-btn" id="tog-nwcg4" onclick="toggleLayer('nwcg4')">Day 5</button>
+        <button class="toggle-btn" id="tog-nwcg5" onclick="toggleLayer('nwcg5')">Day 6</button>
+        <button class="toggle-btn" id="tog-nwcg6" onclick="toggleLayer('nwcg6')">Day 7</button>
       </div>
-      <div class="tab-panel" id="spc-table">
-        <div class="spc-table-wrap" id="spc-table-inner">
-          <div class="loading"><div class="spinner"></div> Fetching SPC outlook table&hellip;</div>
-        </div>
-        <div class="source-note"><a href="https://www.spc.noaa.gov/products/fire_wx/fwdy1.html" target="_blank">NOAA SPC &mdash; Fire Weather Outlooks &#8599;</a> &bull; <a href="https://digital.weather.gov/?zoom=4&lat=37&lon=-96.5&layers=F00BTTTFFTT&region=0&element=38&mxmz=false&barbs=false&subl=TFFFFF&units=english&wunits=nautical&coords=latlon&tunits=localt" target="_blank">NWS Digital Map &#8599;</a></div>
-      </div>
+
     </div>
 
+    <div id="map"></div>
+
+    <div class="legend-bar" id="legend-bar">
+      <span style="color:var(--muted)">No layers selected</span>
+    </div>
+
+    <div class="source-note">
+      <a href="https://api.weather.gov" target="_blank">NWS API</a> &bull;
+      <a href="https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer" target="_blank">SPC Outlooks</a> &bull;
+      <a href="https://fsapps.nwcg.gov/psp/rest/services/npsg/outlooks_forecast/MapServer" target="_blank">NWCG NPSG</a>
+    </div>
   </div>
 
-  <div class="bottom-row">
+  <!-- ── Right Panel ──────────────────────────────────────── -->
+  <div class="card" style="overflow-y: auto;">
 
-    <div class="card">
-      <div class="card-head">
-        <h2>&#x1F332; NWCG 7-Day Fire Weather Outlook</h2>
-        <a class="card-link" href="https://fsapps.nwcg.gov/psp/rest/services/npsg/outlooks_forecast/MapServer" target="_blank">MapServer &#8599;</a>
+    <div class="accord-bar" onclick="toggleAccord('accord-alerts',this)">
+      <span class="accord-title">&#x26A0;&#xFE0F; Active NWS Alerts</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="alert-total" style="font-size:.7rem;color:var(--muted)"></span>
+        <span class="accord-chevron">&#9654;</span>
       </div>
-      <div class="tabs-nav" id="nwcg-tabs-nav"></div>
-      <div id="nwcg-map" style="flex:1; min-height:0;"></div>
-      <div class="nwcg-legend-bar" id="nwcg-legend-bar">
-        <span style="color:var(--muted);font-size:.68rem">Legend:</span>
-        <span class="loading" style="padding:0"><span class="spinner" style="width:12px;height:12px;border-width:1.5px"></span></span>
-      </div>
-      <div class="source-note">
-        <a href="https://fsapps.nwcg.gov/psp/rest/services/npsg/outlooks_forecast/MapServer" target="_blank">NWCG NPSG Forecast MapServer &#8599;</a>
-        &bull; Updated each weekday by mid-afternoon MT
+    </div>
+    <div class="accord-body" id="accord-alerts">
+      <div class="alerts-scroll">
+        <ul id="alerts-list" style="list-style:none">
+          <li class="loading"><div class="spinner"></div> Loading alerts&hellip;</li>
+        </ul>
       </div>
     </div>
 
-    <div class="card">
+    <div class="accord-bar" onclick="toggleAccord('accord-spc',this)">
+      <span class="accord-title">&#x1F4CA; SPC Fire Weather Outlook</span>
+      <span class="accord-chevron">&#9654;</span>
+    </div>
+    <div class="accord-body" id="accord-spc">
+      <div class="spc-table-wrap" id="spc-table-inner">
+        <div class="loading"><div class="spinner"></div> Fetching SPC outlook&hellip;</div>
+      </div>
+      <div class="source-note">
+        <a href="https://www.spc.noaa.gov/products/fire_wx/fwdy1.html" target="_blank">NOAA SPC Fire Weather Outlooks &#8599;</a>
+      </div>
+    </div>
 
-      <div class="accord-bar" onclick="toggleAccord('accord-alerts',this)">
-        <span class="accord-title">&#x26A0;&#xFE0F; Active NWS Alerts</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span id="alert-total" style="font-size:.7rem;color:var(--muted)"></span>
-          <span class="accord-chevron">&#9654;</span>
-        </div>
-      </div>
-      <div class="accord-body" id="accord-alerts">
-        <div class="alerts-scroll">
-          <ul id="alerts-list" style="list-style:none">
-            <li class="loading"><div class="spinner"></div> Loading alerts&hellip;</li>
-          </ul>
-        </div>
-      </div>
+    <div class="accord-bar" onclick="toggleAccord('accord-fuels',this)">
+      <span class="accord-title">&#x1F525; 10 Hour Fuels</span>
+      <span class="accord-chevron">&#9654;</span>
+    </div>
+    <div class="accord-body" id="accord-fuels">
+      <img class="accord-img" src="https://www.wfas.net/images/firedanger/fm_10.png" alt="WFAS 10-hr Fuel Moisture Map">
+    </div>
 
-      <div class="accord-bar" onclick="toggleAccord('accord-fuels',this)">
-        <span class="accord-title">&#x1F525; 10 Hour Fuels</span>
-        <span class="accord-chevron">&#9654;</span>
-      </div>
-      <div class="accord-body" id="accord-fuels">
-        <img class="accord-img" src="https://www.wfas.net/images/firedanger/fm_10.png" alt="WFAS 10-hr Fuel Moisture Map">
-      </div>
+    <div class="accord-bar" onclick="toggleAccord('accord-kbdi',this)">
+      <span class="accord-title">&#x1F4A7; KBDI &mdash; Drought</span>
+      <span class="accord-chevron">&#9654;</span>
+    </div>
+    <div class="accord-body" id="accord-kbdi">
+      <img class="accord-img" src="https://www.wfas.net/images/firedanger/kbdi.png" alt="WFAS Keetch-Byram Drought Index Map">
+    </div>
 
-      <div class="accord-bar" onclick="toggleAccord('accord-kbdi',this)">
-        <span class="accord-title">&#x1F4A7; KBDI &mdash; Drought</span>
-        <span class="accord-chevron">&#9654;</span>
+    <div style="padding:8px 12px; border-top: 1px solid var(--border); flex-shrink:0;">
+      <div id="alert-counts" style="display:flex;gap:14px;flex-wrap:wrap;">
+        <div class="loading" style="padding:0"><div class="spinner"></div></div>
       </div>
-      <div class="accord-body" id="accord-kbdi">
-        <img class="accord-img" src="https://www.wfas.net/images/firedanger/kbdi.png" alt="WFAS Keetch-Byram Drought Index Map">
-      </div>
-
     </div>
 
   </div>
@@ -627,78 +481,162 @@
     </div>
   </div>
 </div>
+
 <script>
-const NWS_URL   = 'https://api.weather.gov/alerts/active?event=Red%20Flag%20Warning%2CFire%20Weather%20Watch&status=actual';
-const NWCG_MS   = 'https://fsapps.nwcg.gov/psp/rest/services/npsg/outlooks_forecast/MapServer';
-const NWCG_WMS  = 'https://fsapps.nwcg.gov/psp/services/npsg/outlooks_forecast/MapServer/WMSServer';
+// ── Constants ─────────────────────────────────────────────────────────────
+const NWS_URL    = 'https://api.weather.gov/alerts/active?event=Red%20Flag%20Warning%2CFire%20Weather%20Watch&status=actual';
+const NWCG_WMS   = 'https://fsapps.nwcg.gov/psp/services/npsg/outlooks_forecast/MapServer/WMSServer';
+const SPC_WMS    = 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer/WMSServer';
 const REFRESH_MS = 5 * 60 * 1000;
 
-const NWCG_DAYS = [
-  { label: 'Day 1', id: 0 },
-  { label: 'Day 2', id: 1 },
-  { label: 'Day 3', id: 2 },
-  { label: 'Day 4', id: 3 },
-  { label: 'Day 5', id: 4 },
-  { label: 'Day 6', id: 5 },
-  { label: 'Day 7', id: 6 },
-];
+// ── Layer definitions ─────────────────────────────────────────────────────
+// type 'geojson': populated from NWS API, stored as L.layerGroup on the map
+// type 'wms': Leaflet tileLayer.wms
+const LAYER_DEFS = {
+  rfw:   { type: 'geojson', label: 'Red Flag Warning',          dotColor: '#cc2200', defaultOn: true  },
+  fww:   { type: 'geojson', label: 'Fire Weather Watch',        dotColor: '#ff8c00', defaultOn: true  },
+  spc1:  { type: 'wms',     label: 'SPC Critical Fire Wx Day 1', dotColor: '#ff2200', defaultOn: false,
+           wmsUrl: SPC_WMS,  wmsLayer: '3',  wmsOpacity: 0.75 },
+  spc2:  { type: 'wms',     label: 'SPC Critical Fire Wx Day 2', dotColor: '#ff5500', defaultOn: false,
+           wmsUrl: SPC_WMS,  wmsLayer: '5',  wmsOpacity: 0.75 },
+  spc3:  { type: 'wms',     label: 'SPC Critical Fire Wx Day 3', dotColor: '#ff7700', defaultOn: false,
+           wmsUrl: SPC_WMS,  wmsLayer: '7',  wmsOpacity: 0.75 },
+  nwcg0: { type: 'wms',     label: 'NWCG Sig. Fire Potential Day 1', dotColor: '#ffaa00', defaultOn: true,
+           wmsUrl: NWCG_WMS, wmsLayer: '0',  wmsOpacity: 0.80 },
+  nwcg1: { type: 'wms',     label: 'NWCG Sig. Fire Potential Day 2', dotColor: '#ffbb22', defaultOn: false,
+           wmsUrl: NWCG_WMS, wmsLayer: '1',  wmsOpacity: 0.80 },
+  nwcg2: { type: 'wms',     label: 'NWCG Sig. Fire Potential Day 3', dotColor: '#ffbb22', defaultOn: false,
+           wmsUrl: NWCG_WMS, wmsLayer: '2',  wmsOpacity: 0.80 },
+  nwcg3: { type: 'wms',     label: 'NWCG Sig. Fire Potential Day 4', dotColor: '#ffbb22', defaultOn: false,
+           wmsUrl: NWCG_WMS, wmsLayer: '3',  wmsOpacity: 0.80 },
+  nwcg4: { type: 'wms',     label: 'NWCG Sig. Fire Potential Day 5', dotColor: '#ffbb22', defaultOn: false,
+           wmsUrl: NWCG_WMS, wmsLayer: '4',  wmsOpacity: 0.80 },
+  nwcg5: { type: 'wms',     label: 'NWCG Sig. Fire Potential Day 6', dotColor: '#ffbb22', defaultOn: false,
+           wmsUrl: NWCG_WMS, wmsLayer: '5',  wmsOpacity: 0.80 },
+  nwcg6: { type: 'wms',     label: 'NWCG Sig. Fire Potential Day 7', dotColor: '#ffbb22', defaultOn: false,
+           wmsUrl: NWCG_WMS, wmsLayer: '6',  wmsOpacity: 0.80 },
+};
 
-// Leaflet map for NWCG outlook
-const nwcgMap = L.map('nwcg-map', { center: [39.5, -98.35], zoom: 4, zoomControl: true, attributionControl: false });
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  subdomains: 'abcd', maxZoom: 19
-}).addTo(nwcgMap);
+// Track visibility and live Leaflet layer references
+const layerVisible  = {};
+const leafletLayers = {};  // key → live Leaflet layer (WMS tile layer or layerGroup)
 
-let nwcgWmsLayer = null;
-
-function showNWCGDay(dayIdx, btn) {
-  document.querySelectorAll('#nwcg-tabs-nav .tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  if (nwcgWmsLayer) nwcgMap.removeLayer(nwcgWmsLayer);
-  nwcgWmsLayer = L.tileLayer.wms(NWCG_WMS, {
-    layers: String(dayIdx),
-    format: 'image/png',
-    transparent: true,
-    opacity: 0.85,
-  }).addTo(nwcgMap);
-}
-
-(function buildNWCGTabs() {
-  const nav = document.getElementById('nwcg-tabs-nav');
-  NWCG_DAYS.forEach((day, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
-    btn.textContent = day.label;
-    btn.onclick = () => showNWCGDay(i, btn);
-    nav.appendChild(btn);
-  });
-  showNWCGDay(0, nav.querySelector('.tab-btn'));
-  requestAnimationFrame(() => nwcgMap.invalidateSize());
-})();
-
+// ── Map init ──────────────────────────────────────────────────────────────
 const map = L.map('map', { center: [39.5, -98.35], zoom: 4 });
 
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-  subdomains: 'abcd',
-  maxZoom: 19
+  subdomains: 'abcd', maxZoom: 19
 }).addTo(map);
 
 requestAnimationFrame(() => map.invalidateSize());
 
-const layers = {
-  rfw: L.layerGroup().addTo(map),
-  fww: L.layerGroup().addTo(map),
-};
-const layerVisible = { rfw: true, fww: true };
+// Pre-create geojson layer groups (WMS layers created on demand)
+leafletLayers.rfw = L.layerGroup();
+leafletLayers.fww = L.layerGroup();
 
+// Apply defaults
+Object.entries(LAYER_DEFS).forEach(([key, def]) => {
+  layerVisible[key] = def.defaultOn;
+  if (def.defaultOn) {
+    if (def.type === 'wms') {
+      leafletLayers[key] = L.tileLayer.wms(def.wmsUrl, {
+        layers: def.wmsLayer, format: 'image/png', transparent: true, opacity: def.wmsOpacity,
+      });
+    }
+    if (leafletLayers[key]) map.addLayer(leafletLayers[key]);
+  }
+  applyToggleStyle(key);
+});
+
+updateLegend();
+
+// ── Layer toggle ──────────────────────────────────────────────────────────
 function toggleLayer(key) {
+  const def = LAYER_DEFS[key];
   layerVisible[key] = !layerVisible[key];
-  layerVisible[key] ? map.addLayer(layers[key]) : map.removeLayer(layers[key]);
-  document.getElementById('tog-' + key).className =
-    layerVisible[key] ? `toggle-btn active-${key}` : 'toggle-btn';
+
+  if (layerVisible[key]) {
+    // Create WMS layer on first use
+    if (def.type === 'wms' && !leafletLayers[key]) {
+      leafletLayers[key] = L.tileLayer.wms(def.wmsUrl, {
+        layers: def.wmsLayer, format: 'image/png', transparent: true, opacity: def.wmsOpacity,
+      });
+    }
+    if (leafletLayers[key]) map.addLayer(leafletLayers[key]);
+  } else {
+    if (leafletLayers[key]) map.removeLayer(leafletLayers[key]);
+  }
+
+  applyToggleStyle(key);
+  updateLegend();
 }
 
+function applyToggleStyle(key) {
+  const btn = document.getElementById('tog-' + key);
+  if (!btn) return;
+  const def = LAYER_DEFS[key];
+  const on  = layerVisible[key];
+  btn.style.borderColor  = on ? def.dotColor : '';
+  btn.style.color        = on ? 'var(--text)' : '';
+  btn.style.background   = on ? hexToRgba(def.dotColor, 0.15) : '';
+}
+
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// ── Dynamic legend ────────────────────────────────────────────────────────
+// Legend rows: static items per layer type (shown if at least one of that group is on)
+const LEGEND_ENTRIES = {
+  nws: [
+    { color: 'rgba(204,34,0,0.45)',  border: '#cc2200', label: 'Red Flag Warning' },
+    { color: 'rgba(255,140,0,0.40)', border: '#ff8c00', label: 'Fire Weather Watch' },
+  ],
+  spc: [
+    { color: 'rgba(180,0,0,0.55)',   border: '#cc0000', label: 'Extreme' },
+    { color: 'rgba(220,50,0,0.50)',  border: '#ff3300', label: 'Critical' },
+    { color: 'rgba(255,120,0,0.45)', border: '#ff7700', label: 'Elevated' },
+  ],
+  nwcg: [
+    { color: '#d73027', border: '#d73027', label: 'High Fire Potential' },
+    { color: '#fc8d59', border: '#fc8d59', label: 'Elevated' },
+    { color: '#fee090', border: '#fee090', label: 'Normal' },
+    { color: '#91bfdb', border: '#91bfdb', label: 'Below Normal' },
+  ],
+};
+
+function updateLegend() {
+  const bar = document.getElementById('legend-bar');
+  const items = [];
+
+  const nwsOn  = layerVisible.rfw || layerVisible.fww;
+  const spcOn  = layerVisible.spc1 || layerVisible.spc2 || layerVisible.spc3;
+  const nwcgOn = Object.keys(LAYER_DEFS).filter(k => k.startsWith('nwcg')).some(k => layerVisible[k]);
+
+  // Filter NWS entries to only what's active
+  if (layerVisible.rfw)  items.push(LEGEND_ENTRIES.nws[0]);
+  if (layerVisible.fww)  items.push(LEGEND_ENTRIES.nws[1]);
+  if (spcOn)             LEGEND_ENTRIES.spc.forEach(e  => items.push(e));
+  if (nwcgOn)            LEGEND_ENTRIES.nwcg.forEach(e => items.push(e));
+
+  if (!items.length) {
+    bar.innerHTML = '<span style="color:var(--muted)">No layers selected</span>';
+    return;
+  }
+
+  bar.innerHTML = '<span style="color:var(--muted);flex-shrink:0">Legend:</span>' +
+    items.map(e => `
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:${e.color};border-color:${e.border}"></div>
+        <span style="color:var(--muted)">${e.label}</span>
+      </div>`).join('');
+}
+
+// ── NWS alert polygons ────────────────────────────────────────────────────
 let allAlerts   = [];
 let sortedAlerts = [];
 
@@ -714,7 +652,6 @@ async function fetchAlerts() {
 
     const zoneUrlSet = new Set();
     needZone.forEach(f => (f.properties.affectedZones || []).forEach(u => zoneUrlSet.add(u)));
-
     const zoneGeoms = zoneUrlSet.size ? await fetchZoneGeoms(zoneUrlSet) : {};
 
     const zoneAlertMap = {};
@@ -725,8 +662,8 @@ async function fetchAlerts() {
       });
     });
 
-    layers.rfw.clearLayers();
-    layers.fww.clearLayers();
+    leafletLayers.rfw.clearLayers();
+    leafletLayers.fww.clearLayers();
 
     hasGeom.forEach(f => addAlertPolygon(f.geometry, f.properties));
 
@@ -786,7 +723,7 @@ function addAlertPolygon(geometry, props) {
         );
         lyr.on('click', () => openModal(props));
       }
-    }).addTo(layers[isRFW ? 'rfw' : 'fww']);
+    }).addTo(leafletLayers[isRFW ? 'rfw' : 'fww']);
   } catch (e) {
     console.warn('Polygon render failed:', e);
   }
@@ -827,18 +764,19 @@ function updateAlertCounts() {
   const rfw = allAlerts.filter(f => f.properties.event === 'Red Flag Warning').length;
   const fww = allAlerts.filter(f => f.properties.event === 'Fire Weather Watch').length;
   document.getElementById('alert-counts').innerHTML = `
-    <div class="count-badge">
-      <span class="count-num red">${rfw}</span>
-      <span class="count-label">Red Flag${rfw !== 1 ? 's' : ''}</span>
+    <div style="display:flex;align-items:baseline;gap:4px">
+      <span style="font-size:1.1rem;font-weight:700;color:#cc2200">${rfw}</span>
+      <span style="font-size:.7rem;color:var(--muted)">Red Flag${rfw !== 1 ? 's' : ''}</span>
     </div>
-    <div class="count-badge">
-      <span class="count-num orange">${fww}</span>
-      <span class="count-label">Watch${fww !== 1 ? 'es' : ''}</span>
+    <div style="display:flex;align-items:baseline;gap:4px">
+      <span style="font-size:1.1rem;font-weight:700;color:#ff8c00">${fww}</span>
+      <span style="font-size:.7rem;color:var(--muted)">Watch${fww !== 1 ? 'es' : ''}</span>
     </div>`;
   document.getElementById('alert-count-header').textContent =
     `${rfw + fww} active alert${rfw + fww !== 1 ? 's' : ''}`;
 }
 
+// ── SPC outlook table ─────────────────────────────────────────────────────
 async function loadSPCTable() {
   const container = document.getElementById('spc-table-inner');
   try {
@@ -878,9 +816,9 @@ function renderSPCFallbackTable(container) {
       <thead><tr><th>Period</th><th>Date</th><th>Valid Window</th><th>View</th></tr></thead>
       <tbody>
         ${[
-          { l:'Day 1',        d:pad(0), v:'1200Z Today &rarr; 1200Z Tomorrow' },
-          { l:'Day 2',        d:pad(1), v:'1200Z Tomorrow &rarr; 1200Z +2' },
-          { l:'Day 3&ndash;8', d:null,  v:'Extended 3&ndash;8 day period' },
+          { l:'Day 1',         d:pad(0), v:'1200Z Today &rarr; 1200Z Tomorrow' },
+          { l:'Day 2',         d:pad(1), v:'1200Z Tomorrow &rarr; 1200Z +2' },
+          { l:'Day 3&ndash;8', d:null,   v:'Extended 3&ndash;8 day period' },
         ].map(r => `<tr>
           <td><strong>${r.l}</strong></td>
           <td>${r.d ? fmt(r.d) : '&mdash;'}</td>
@@ -890,24 +828,17 @@ function renderSPCFallbackTable(container) {
       </tbody>
     </table>
     <p style="padding:8px 10px; font-size:.7rem; color:var(--muted)">
-      &#9432; Table unavailable via CORS &mdash; see the Map tab or visit
+      &#9432; Table unavailable via CORS &mdash;
       <a href="https://www.spc.noaa.gov/products/fire_wx/fwdy1.html" target="_blank" style="color:var(--fire)">spc.noaa.gov &#8599;</a>
     </p>`;
 }
 
-
+// ── Utility ───────────────────────────────────────────────────────────────
 function toggleAccord(bodyId, barEl) {
   const body    = document.getElementById(bodyId);
   const opening = !body.classList.contains('open');
   body.classList.toggle('open', opening);
   barEl.classList.toggle('open', opening);
-}
-
-function showTab(group, panelId, clickedBtn) {
-  document.querySelectorAll(`[id^="${group}-"]`).forEach(p => p.classList.remove('active'));
-  clickedBtn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(panelId).classList.add('active');
-  clickedBtn.classList.add('active');
 }
 
 function openModal(indexOrProps) {
@@ -956,9 +887,15 @@ function refreshAll() {
   document.getElementById('alert-counts').innerHTML =
     '<div class="loading" style="padding:0"><div class="spinner"></div></div>';
   fetchAlerts();
-  if (nwcgWmsLayer) nwcgWmsLayer.redraw();
+  // Redraw all active WMS layers
+  Object.entries(LAYER_DEFS).forEach(([key, def]) => {
+    if (def.type === 'wms' && layerVisible[key] && leafletLayers[key]) {
+      leafletLayers[key].redraw();
+    }
+  });
 }
 
+// ── Leaflet tooltip style ─────────────────────────────────────────────────
 const ttStyle = document.createElement('style');
 ttStyle.textContent = `
   .leaflet-tooltip-dark {
@@ -972,54 +909,11 @@ ttStyle.textContent = `
 `;
 document.head.appendChild(ttStyle);
 
-setInterval(refreshAll, REFRESH_MS);
-
-async function loadNWCGLegend() {
-  const bar = document.getElementById('nwcg-legend-bar');
-  if (!bar) return;
-
-  // Standard NWCG 7-day significant fire potential categories (fallback)
-  const STATIC = [
-    { color: '#d73027', label: 'High' },
-    { color: '#fc8d59', label: 'Elevated' },
-    { color: '#fee090', label: 'Normal' },
-    { color: '#91bfdb', label: 'Below Normal' },
-  ];
-
-  function renderStatic(items) {
-    bar.innerHTML = '<span style="color:var(--muted);font-size:.68rem">Legend:</span>' +
-      items.map(({ color, label }) =>
-        `<div class="legend-item">
-          <div class="nwcg-legend-swatch" style="background:${color};border-color:${color}"></div>
-          <span style="font-size:.68rem;color:var(--muted)">${label}</span>
-        </div>`
-      ).join('');
-  }
-
-  try {
-    const resp = await fetch(`${NWCG_MS}/legend?f=json`);
-    if (!resp.ok) throw new Error('legend ' + resp.status);
-    const data = await resp.json();
-    // Use legend entries from any layer that has them
-    const entries = (data.layers || []).flatMap(l => l.legend || []).filter(e => e.label);
-    if (!entries.length) throw new Error('no entries');
-    bar.innerHTML = '<span style="color:var(--muted);font-size:.68rem">Legend:</span>' +
-      entries.map(e =>
-        `<div class="legend-item">
-          <img src="data:${e.contentType};base64,${e.imageData}"
-               alt="${e.label}" style="width:20px;height:14px;border-radius:2px;flex-shrink:0">
-          <span style="font-size:.68rem;color:var(--muted)">${e.label}</span>
-        </div>`
-      ).join('');
-  } catch (_) {
-    renderStatic(STATIC);
-  }
-}
-
+// ── Boot ──────────────────────────────────────────────────────────────────
 fetchAlerts();
 loadSPCTable();
-loadNWCGLegend();
 updateTimestamp();
+setInterval(refreshAll, REFRESH_MS);
 </script>
 </body>
 </html>
