@@ -513,19 +513,14 @@ for (let i = 0; i < 7; i++) {
 // ── SPC layers ────────────────────────────────────────────────────────────
 // Create layers IMMEDIATELY so toggles always work.
 // Try multiple known NOAA ArcGIS service URLs for SPC fire weather outlooks.
-const SPC_CANDIDATES = [
-  'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer',
-  'https://idpgis.ncep.noaa.gov/arcgis/rest/services/NWS_Forecasts_Guidance_Warnings/SPC_wx_outlks/MapServer',
-];
+// ── SPC Fire Weather layers ───────────────────────────────────────────────
+// SPC_wx_outlks only has convective outlooks. Fire weather is a separate service.
+// We discover the correct service by scanning the NOAA services catalog.
+const NOAA_BASE = 'https://mapservices.weather.noaa.gov/vector/rest/services';
 
-// Create SPC layers with the primary URL first. The esri-leaflet dynamicMapLayer
-// renders via <img> tags (no CORS needed). If the URL/layerIDs are wrong the tiles
-// just won't render — nothing breaks.
 function createSPCLayers(url, layerIds) {
   ['spc1', 'spc2', 'spc3'].forEach((key, i) => {
-    if (leafletLayers[key]) {
-      if (layerVisible[key]) map.removeLayer(leafletLayers[key]);
-    }
+    if (leafletLayers[key] && layerVisible[key]) map.removeLayer(leafletLayers[key]);
     leafletLayers[key] = L.esri.dynamicMapLayer({
       url: url,
       layers: layerIds[i] !== null ? [layerIds[i]] : [],
@@ -533,94 +528,101 @@ function createSPCLayers(url, layerIds) {
       transparent: true,
     });
     leafletLayers[key].on('requesterror', function(e) {
-      console.warn(`SPC layer ${key} request error:`, e);
+      console.warn(`SPC layer ${key} error:`, e);
     });
     if (layerVisible[key]) map.addLayer(leafletLayers[key]);
   });
-  console.log('SPC layers created:', url, 'layerIds:', layerIds);
+  console.log('SPC layers created:', url, 'ids:', layerIds);
 }
 
-// Create with primary URL + no layer filter (show all visible) as initial default
-createSPCLayers(SPC_CANDIDATES[0], [null, null, null]);
+// Placeholder layers so toggles don't crash before discovery
+['spc1', 'spc2', 'spc3'].forEach(key => { leafletLayers[key] = L.layerGroup(); });
 
-// Then try to discover actual fire weather layer IDs from each candidate URL
+// Discover the fire weather service from the NOAA catalog, then find layer IDs
 (async function initSPCLayers() {
-  for (const url of SPC_CANDIDATES) {
-    try {
-      console.log('Trying SPC service:', url);
-      const resp = await fetch(url + '?f=json');
-      if (!resp.ok) { console.warn('SPC', url, 'HTTP', resp.status); continue; }
-      const info = await resp.json();
-      const all  = info.layers || [];
+  try {
+    // Step 1: List all services under /outlooks to find fire weather service
+    console.log('SPC: scanning NOAA services catalog...');
+    const catResp = await fetch(NOAA_BASE + '/outlooks?f=json');
+    if (!catResp.ok) throw new Error('Catalog HTTP ' + catResp.status);
+    const catalog = await catResp.json();
+    const services = catalog.services || [];
+    console.log('SPC: available services:', services.map(s => s.name + ' (' + s.type + ')'));
 
-      console.log('SPC layers found:', all.map(l => `  ${l.id}: ${l.name} (sub:${l.subLayerIds||'none'})`).join('\n'));
-
-      // Find fire weather leaf layers (no sublayers = actual renderable layers)
-      const fireLayers = all.filter(l =>
-        /fire/i.test(l.name || '') && (!l.subLayerIds || l.subLayerIds.length === 0)
-      );
-      console.log('SPC fire layers:', fireLayers.map(l => `${l.id}: ${l.name}`));
-
-      if (fireLayers.length >= 1) {
-        // Sort by ID to get day 1, 2, 3 in order
-        fireLayers.sort((a, b) => a.id - b.id);
-        const ids = [
-          fireLayers[0]?.id ?? null,
-          fireLayers[1]?.id ?? null,
-          fireLayers[2]?.id ?? null,
-        ];
-        console.log('SPC fire weather layer IDs:', ids);
-        createSPCLayers(url, ids);
-        return; // Found and applied — done
+    // Find a fire-weather-related MapServer service
+    let fwService = services.find(s =>
+      /fire/i.test(s.name) && s.type === 'MapServer'
+    );
+    // Fallback: look in all folders
+    if (!fwService) {
+      const folders = catalog.folders || [];
+      for (const folder of folders) {
+        try {
+          const fResp = await fetch(NOAA_BASE + '/' + folder + '?f=json');
+          if (!fResp.ok) continue;
+          const fData = await fResp.json();
+          fwService = (fData.services || []).find(s =>
+            /fire/i.test(s.name) && s.type === 'MapServer'
+          );
+          if (fwService) break;
+        } catch (_) {}
       }
-    } catch (e) {
-      console.warn('SPC discovery failed for', url, ':', e.message);
     }
+
+    if (!fwService) {
+      // Last resort: try known possible service names
+      const guesses = [
+        NOAA_BASE + '/outlooks/SPC_wx_outlks_fwf/MapServer',
+        NOAA_BASE + '/fire_weather/SPC_fwOutlook/MapServer',
+        NOAA_BASE + '/outlooks/SPC_fwdy/MapServer',
+      ];
+      for (const url of guesses) {
+        try {
+          const r = await fetch(url + '?f=json');
+          if (r.ok) { fwService = { name: url.replace(NOAA_BASE + '/', ''), _url: url }; break; }
+        } catch (_) {}
+      }
+    }
+
+    const spcUrl = fwService?._url || (NOAA_BASE + '/' + fwService?.name + '/MapServer');
+    if (!fwService) {
+      console.warn('SPC: No fire weather service found in NOAA catalog.');
+      return;
+    }
+
+    console.log('SPC: using fire weather service:', spcUrl);
+
+    // Step 2: Get layers from the fire weather service
+    const layerResp = await fetch(spcUrl + '?f=json');
+    if (!layerResp.ok) throw new Error('Service HTTP ' + layerResp.status);
+    const info = await layerResp.json();
+    const all  = info.layers || [];
+
+    console.log('SPC FW layers:', all.map(l => `  ${l.id}: ${l.name} (sub:${l.subLayerIds||'none'})`).join('\n'));
+
+    // Find leaf layers (renderable) — prefer "critical" but take anything fire-related
+    let fireLayers = all.filter(l => (!l.subLayerIds || l.subLayerIds.length === 0));
+    // Try to find day 1, 2, 3 by name
+    const day1 = fireLayers.find(l => /day\s*1/i.test(l.name));
+    const day2 = fireLayers.find(l => /day\s*2/i.test(l.name));
+    const day3 = fireLayers.find(l => /day\s*3/i.test(l.name));
+
+    // Fallback: just use first 3 leaf layers
+    const ids = [
+      day1?.id ?? fireLayers[0]?.id ?? null,
+      day2?.id ?? fireLayers[1]?.id ?? null,
+      day3?.id ?? fireLayers[2]?.id ?? null,
+    ];
+
+    console.log('SPC fire weather layer IDs:', ids);
+    createSPCLayers(spcUrl, ids);
+
+  } catch (e) {
+    console.warn('SPC discovery failed:', e.message);
   }
-  console.warn('SPC: Could not auto-discover fire weather layers from any service URL.');
 })()
 
-// ── Apply default visibility ──────────────────────────────────────────────
-Object.entries(LAYER_META).forEach(([key, meta]) => {
-  layerVisible[key] = meta.defaultOn;
-  if (meta.defaultOn && leafletLayers[key]) {
-    map.addLayer(leafletLayers[key]);
-  }
-  applyToggleStyle(key);
-});
-
-updateLegend();
-
-// ── Toggle layer ──────────────────────────────────────────────────────────
-function toggleLayer(key) {
-  layerVisible[key] = !layerVisible[key];
-  if (layerVisible[key] && leafletLayers[key]) {
-    map.addLayer(leafletLayers[key]);
-  } else if (!layerVisible[key] && leafletLayers[key]) {
-    map.removeLayer(leafletLayers[key]);
-  }
-  applyToggleStyle(key);
-  updateLegend();
-}
-
-function applyToggleStyle(key) {
-  const btn = document.getElementById('tog-' + key);
-  if (!btn) return;
-  const meta = LAYER_META[key];
-  const on   = layerVisible[key];
-  btn.style.borderColor = on ? meta.dotColor : '';
-  btn.style.color       = on ? 'var(--text)' : '';
-  btn.style.background  = on ? hexToRgba(meta.dotColor, 0.15) : '';
-}
-
-function hexToRgba(hex, a) {
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
-  return `rgba(${r},${g},${b},${a})`;
-}
-
-// ── Dynamic legend ────────────────────────────────────────────────────────
+// ── Dynamic legend (must be defined before updateLegend is called) ─────────
 const LEGEND_ENTRIES = {
   nws: [
     { color: 'rgba(204,34,0,0.45)',  border: '#cc2200', label: 'Red Flag Warning' },
@@ -664,6 +666,46 @@ function updateLegend() {
         <span style="color:var(--muted)">${e.label}</span>
       </div>`).join('');
 }
+
+// ── Toggle helpers ────────────────────────────────────────────────────────
+function toggleLayer(key) {
+  layerVisible[key] = !layerVisible[key];
+  if (layerVisible[key] && leafletLayers[key]) {
+    map.addLayer(leafletLayers[key]);
+  } else if (!layerVisible[key] && leafletLayers[key]) {
+    map.removeLayer(leafletLayers[key]);
+  }
+  applyToggleStyle(key);
+  updateLegend();
+}
+
+function applyToggleStyle(key) {
+  const btn = document.getElementById('tog-' + key);
+  if (!btn) return;
+  const meta = LAYER_META[key];
+  const on   = layerVisible[key];
+  btn.style.borderColor = on ? meta.dotColor : '';
+  btn.style.color       = on ? 'var(--text)' : '';
+  btn.style.background  = on ? hexToRgba(meta.dotColor, 0.15) : '';
+}
+
+function hexToRgba(hex, a) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// ── Apply default visibility ──────────────────────────────────────────────
+Object.entries(LAYER_META).forEach(([key, meta]) => {
+  layerVisible[key] = meta.defaultOn;
+  if (meta.defaultOn && leafletLayers[key]) {
+    map.addLayer(leafletLayers[key]);
+  }
+  applyToggleStyle(key);
+});
+
+updateLegend();
 
 // ── NWS alert fetch ───────────────────────────────────────────────────────
 let allAlerts   = [];
