@@ -510,54 +510,75 @@ for (let i = 0; i < 7; i++) {
   });
 }
 
-// ── SPC layers (auto-discovered from service) ─────────────────────────────
-// SPC layers are created asynchronously after querying the service metadata.
-async function initSPCLayers() {
-  try {
-    const resp = await fetch(SPC_URL + '?f=json');
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const info = await resp.json();
-    const all  = info.layers || [];
+// ── SPC layers ────────────────────────────────────────────────────────────
+// Create layers IMMEDIATELY so toggles always work.
+// Try multiple known NOAA ArcGIS service URLs for SPC fire weather outlooks.
+const SPC_CANDIDATES = [
+  'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer',
+  'https://idpgis.ncep.noaa.gov/arcgis/rest/services/NWS_Forecasts_Guidance_Warnings/SPC_wx_outlks/MapServer',
+];
 
-    console.log('SPC service layers:', all.map(l => `${l.id}: ${l.name}`).join('\n'));
-
-    // Match fire weather layers by name — look for "critical" + "day N" patterns
-    const spcMap = { spc1: null, spc2: null, spc3: null };
-    for (const l of all) {
-      const n = (l.name || '').toLowerCase();
-      if (n.includes('fire') || n.includes('critical')) {
-        if (/day\s*1|d1\b/i.test(n))      spcMap.spc1 = l.id;
-        else if (/day\s*2|d2\b/i.test(n)) spcMap.spc2 = l.id;
-        else if (/day\s*3|d3\b/i.test(n)) spcMap.spc3 = l.id;
-      }
+// Create SPC layers with the primary URL first. The esri-leaflet dynamicMapLayer
+// renders via <img> tags (no CORS needed). If the URL/layerIDs are wrong the tiles
+// just won't render — nothing breaks.
+function createSPCLayers(url, layerIds) {
+  ['spc1', 'spc2', 'spc3'].forEach((key, i) => {
+    if (leafletLayers[key]) {
+      if (layerVisible[key]) map.removeLayer(leafletLayers[key]);
     }
-
-    // If name-match didn't find them, try layers with "fire" in the name
-    if (spcMap.spc1 === null) {
-      const fireLayers = all.filter(l => /fire/i.test(l.name || '')).filter(l => !l.subLayerIds);
-      if (fireLayers.length >= 1) spcMap.spc1 = fireLayers[0].id;
-      if (fireLayers.length >= 2) spcMap.spc2 = fireLayers[1].id;
-      if (fireLayers.length >= 3) spcMap.spc3 = fireLayers[2].id;
-    }
-
-    for (const [key, layerId] of Object.entries(spcMap)) {
-      if (layerId !== null) {
-        leafletLayers[key] = L.esri.dynamicMapLayer({
-          url: SPC_URL,
-          layers: [layerId],
-          opacity: 0.75,
-          transparent: true,
-        });
-        // If toggled on before discovery completed, add now
-        if (layerVisible[key]) map.addLayer(leafletLayers[key]);
-      }
-    }
-
-    console.log('SPC layer mapping:', spcMap);
-  } catch (e) {
-    console.warn('SPC layer discovery failed:', e.message);
-  }
+    leafletLayers[key] = L.esri.dynamicMapLayer({
+      url: url,
+      layers: layerIds[i] !== null ? [layerIds[i]] : [],
+      opacity: 0.75,
+      transparent: true,
+    });
+    leafletLayers[key].on('requesterror', function(e) {
+      console.warn(`SPC layer ${key} request error:`, e);
+    });
+    if (layerVisible[key]) map.addLayer(leafletLayers[key]);
+  });
+  console.log('SPC layers created:', url, 'layerIds:', layerIds);
 }
+
+// Create with primary URL + no layer filter (show all visible) as initial default
+createSPCLayers(SPC_CANDIDATES[0], [null, null, null]);
+
+// Then try to discover actual fire weather layer IDs from each candidate URL
+(async function initSPCLayers() {
+  for (const url of SPC_CANDIDATES) {
+    try {
+      console.log('Trying SPC service:', url);
+      const resp = await fetch(url + '?f=json');
+      if (!resp.ok) { console.warn('SPC', url, 'HTTP', resp.status); continue; }
+      const info = await resp.json();
+      const all  = info.layers || [];
+
+      console.log('SPC layers found:', all.map(l => `  ${l.id}: ${l.name} (sub:${l.subLayerIds||'none'})`).join('\n'));
+
+      // Find fire weather leaf layers (no sublayers = actual renderable layers)
+      const fireLayers = all.filter(l =>
+        /fire/i.test(l.name || '') && (!l.subLayerIds || l.subLayerIds.length === 0)
+      );
+      console.log('SPC fire layers:', fireLayers.map(l => `${l.id}: ${l.name}`));
+
+      if (fireLayers.length >= 1) {
+        // Sort by ID to get day 1, 2, 3 in order
+        fireLayers.sort((a, b) => a.id - b.id);
+        const ids = [
+          fireLayers[0]?.id ?? null,
+          fireLayers[1]?.id ?? null,
+          fireLayers[2]?.id ?? null,
+        ];
+        console.log('SPC fire weather layer IDs:', ids);
+        createSPCLayers(url, ids);
+        return; // Found and applied — done
+      }
+    } catch (e) {
+      console.warn('SPC discovery failed for', url, ':', e.message);
+    }
+  }
+  console.warn('SPC: Could not auto-discover fire weather layers from any service URL.');
+})()
 
 // ── Apply default visibility ──────────────────────────────────────────────
 Object.entries(LAYER_META).forEach(([key, meta]) => {
@@ -650,10 +671,12 @@ let sortedAlerts = [];
 
 async function fetchAlerts() {
   try {
+    console.log('Fetching NWS alerts from:', NWS_URL);
     const resp = await fetch(NWS_URL, { headers: { Accept: 'application/geo+json' } });
     if (!resp.ok) throw new Error(`NWS API HTTP ${resp.status}`);
     const data = await resp.json();
     allAlerts = data.features || [];
+    console.log('NWS alerts received:', allAlerts.length, 'features');
 
     const hasGeom  = allAlerts.filter(f => f.geometry);
     const needZone = allAlerts.filter(f => !f.geometry);
@@ -691,7 +714,11 @@ async function fetchAlerts() {
     document.getElementById('alert-counts').innerHTML =
       `<span style="color:var(--fire);font-size:.7rem">&#9888; ${err.message}</span>`;
     document.getElementById('alerts-list').innerHTML =
-      `<li><div class="error-banner">Could not load NWS alerts: ${err.message}</div></li>`;
+      `<li><div class="error-banner">Could not load NWS alerts: ${err.message}<br><small style="color:var(--muted)">Check browser console (F12) for details. If running from file://, try a local HTTP server instead.</small></div></li>`;
+    // Auto-open accordion to show the error
+    const ab = document.getElementById('accord-alerts');
+    const bar = ab?.previousElementSibling;
+    if (ab && !ab.classList.contains('open')) { ab.classList.add('open'); bar?.classList.add('open'); }
   }
 }
 
@@ -734,8 +761,15 @@ function addAlertPolygon(geometry, props) {
 
 function buildAlertList() {
   const list = document.getElementById('alerts-list');
+  // Auto-open alerts accordion to show status
+  const accordBody = document.getElementById('accord-alerts');
+  const accordBar  = accordBody?.previousElementSibling;
+  if (accordBody && !accordBody.classList.contains('open')) {
+    accordBody.classList.add('open');
+    if (accordBar) accordBar.classList.add('open');
+  }
   if (!allAlerts.length) {
-    list.innerHTML = '<li class="no-data">No active Red Flag Warnings or Fire Weather Watches.</li>';
+    list.innerHTML = '<li class="no-data">&#x2705; Connected to NWS API &mdash; No active Red Flag Warnings or Fire Weather Watches at this time.</li>';
     return;
   }
   sortedAlerts = [...allAlerts].sort((a, b) => {
@@ -841,7 +875,6 @@ function refreshAll() {
 
 // ── Boot ──────────────────────────────────────────────────────────────────
 fetchAlerts();
-initSPCLayers();
 updateTimestamp();
 setInterval(refreshAll, REFRESH_MS);
 </script>
