@@ -220,16 +220,14 @@
     .tab-panel { display: none; flex: 1; flex-direction: column; min-height: 0; }
     .tab-panel.active { display: flex; }
 
-    .spc-img-wrap {
+    .spc-map-wrap {
       flex: 1;
       min-height: 0;
       overflow: hidden;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 8px;
+      flex-direction: column;
     }
-    .spc-img-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; display: block; }
+    .spc-map-wrap iframe { flex: 1; width: 100%; border: none; border-radius: 4px; min-height: 0; }
 
     .spc-table-wrap { flex: 1; min-height: 0; overflow: auto; }
     .spc-table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
@@ -484,34 +482,18 @@
         <a class="card-link" href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank">Full Page &#8599;</a>
       </div>
       <div class="tabs-nav">
-        <button class="tab-btn active" onclick="showTab('spc','spc-day1',this)">Day 1</button>
-        <button class="tab-btn" onclick="showTab('spc','spc-day2',this)">Day 2</button>
-        <button class="tab-btn" onclick="showTab('spc','spc-day38',this)">Day 3&ndash;8</button>
+        <button class="tab-btn active" onclick="showTab('spc','spc-map',this)">Map</button>
         <button class="tab-btn" onclick="showTab('spc','spc-table',this)">Table</button>
       </div>
-      <div class="tab-panel active" id="spc-day1">
-        <div class="spc-img-wrap">
-          <img src="https://www.spc.noaa.gov/products/exper/fire_wx/imgs/day1otlk_fire.gif"
-               alt="SPC Day 1 Fire Weather Outlook"
-               onerror="this.parentElement.innerHTML=spcImgFallback(1)">
+      <div class="tab-panel active" id="spc-map">
+        <div class="spc-map-wrap">
+          <iframe src="https://www.spc.noaa.gov/products/exper/fire_wx/"
+                  title="SPC Fire Weather Outlooks Interactive Map"
+                  loading="lazy"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups">
+          </iframe>
         </div>
-        <div class="source-note">SPC Day 1 (1200Z&ndash;1200Z) &mdash; <a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank">spc.noaa.gov &#8599;</a></div>
-      </div>
-      <div class="tab-panel" id="spc-day2">
-        <div class="spc-img-wrap">
-          <img src="https://www.spc.noaa.gov/products/exper/fire_wx/imgs/day2otlk_fire.gif"
-               alt="SPC Day 2 Fire Weather Outlook"
-               onerror="this.parentElement.innerHTML=spcImgFallback(2)">
-        </div>
-        <div class="source-note">SPC Day 2 (1200Z&ndash;1200Z) &mdash; <a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank">spc.noaa.gov &#8599;</a></div>
-      </div>
-      <div class="tab-panel" id="spc-day38">
-        <div class="spc-img-wrap">
-          <img src="https://www.spc.noaa.gov/products/exper/fire_wx/imgs/day38otlk_fire.gif"
-               alt="SPC Day 3-8 Fire Weather Outlook"
-               onerror="this.parentElement.innerHTML=spcImgFallback('3-8')">
-        </div>
-        <div class="source-note">SPC Extended (Day 3&ndash;8) &mdash; <a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank">spc.noaa.gov &#8599;</a></div>
+        <div class="source-note">SPC Experimental Fire Weather Outlooks &mdash; <a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank">spc.noaa.gov &#8599;</a></div>
       </div>
       <div class="tab-panel" id="spc-table">
         <div class="spc-table-wrap" id="spc-table-inner">
@@ -849,15 +831,11 @@ function renderSPCFallbackTable(container) {
       </tbody>
     </table>
     <p style="padding:8px 10px; font-size:.7rem; color:var(--muted)">
-      &#9432; Table unavailable via CORS &mdash; see image tabs above.
+      &#9432; Table unavailable via CORS &mdash; see the Map tab or visit
       <a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank" style="color:var(--fire)">spc.noaa.gov &#8599;</a>
     </p>`;
 }
 
-function spcImgFallback(day) {
-  return `<div class="no-data">Day ${day} image unavailable.
-    <br><a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank" style="color:var(--fire)">View on SPC &#8599;</a></div>`;
-}
 
 function showTab(group, panelId, clickedBtn) {
   document.querySelectorAll(`[id^="${group}-"]`).forEach(p => p.classList.remove('active'));
