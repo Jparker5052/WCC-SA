@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wildfire Danger Situational Awareness Dashboard</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    :root {
+      --bg:          #0d1117;
+      --bg-card:     #161b22;
+      --bg-alt:      #1c2128;
+      --border:      #30363d;
+      --text:        #e6edf3;
+      --muted:       #8b949e;
+      --fire:        #ff6b35;
+      --rfw-color:   #cc2200;
+      --rfw-fill:    rgba(204, 34,  0,   0.40);
+      --fww-color:   #ff8c00;
+      --fww-fill:    rgba(255, 140, 0,   0.35);
+      --extreme-bg:  rgba(139, 0,   0,   0.30);
+      --extreme-txt: #ff4444;
+      --critical-bg: rgba(204, 34,  0,   0.25);
+      --critical-txt:#ff6633;
+      --elevated-bg: rgba(255, 140, 0,   0.20);
+      --elevated-txt:#ffaa44;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      font-size: 13px;
+    }
+
+    header {
+      background: linear-gradient(135deg, #160600 0%, #2b1000 60%, #160600 100%);
+      border-bottom: 2px solid var(--fire);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .fire-icon { font-size: 1.5rem; line-height: 1; }
+
+    header h1 { font-size: 1.1rem; font-weight: 700; line-height: 1.2; }
+    header h1 span { display: block; font-size: 0.7rem; font-weight: 400; color: var(--muted); }
+
+    .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .data-sources { font-size: 0.7rem; color: var(--muted); }
+
+    .timestamp-badge {
+      background: rgba(255,107,53,.12);
+      border: 1px solid var(--fire);
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.7rem;
+      color: var(--fire);
+    }
+
+    .refresh-btn {
+      background: var(--fire);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .refresh-btn:hover { background: #e55a25; }
+
+    main {
+      flex: 1;
+      min-height: 0;
+      padding: 8px;
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .top-row { display: grid; grid-template-columns: 3fr 2fr; gap: 8px; min-height: 0; }
+    .bottom-row { display: grid; grid-template-columns: 5fr 3fr; gap: 8px; min-height: 0; }
+
+    @media (max-width: 1100px) {
+      body { overflow: auto; height: auto; }
+      main { grid-template-rows: auto auto; overflow: visible; }
+      .top-row    { grid-template-columns: 1fr; }
+      .bottom-row { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .card-head {
+      background: var(--bg-alt);
+      border-bottom: 1px solid var(--border);
+      padding: 7px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .card-head h2 { font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+
+    .card-link { color: var(--fire); font-size: 0.7rem; text-decoration: none; white-space: nowrap; }
+    .card-link:hover { text-decoration: underline; }
+
+    .map-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+    #map { flex: 1; min-height: 0; width: 100%; }
+
+    .map-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 14px;
+      background: var(--bg-alt);
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .legend { display: flex; gap: 14px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.7rem; color: var(--muted); }
+
+    .swatch { width: 18px; height: 10px; border-radius: 2px; border: 1px solid rgba(255,255,255,.25); }
+    .swatch-rfw { background: var(--rfw-fill); border-color: var(--rfw-color); }
+    .swatch-fww { background: var(--fww-fill); border-color: var(--fww-color); }
+
+    .alert-counts { display: flex; gap: 14px; }
+    .count-badge { display: flex; align-items: baseline; gap: 4px; }
+    .count-num { font-size: 1.1rem; font-weight: 700; }
+    .count-num.red    { color: var(--rfw-color); }
+    .count-num.orange { color: var(--fww-color); }
+    .count-label { font-size: 0.7rem; color: var(--muted); }
+
+    .layer-toggles {
+      display: flex;
+      gap: 8px;
+      padding: 5px 14px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-card);
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+
+    .toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 14px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      transition: all .2s;
+      user-select: none;
+    }
+
+    .toggle-btn.active-rfw  { border-color: var(--rfw-color);  color: var(--text); background: rgba(204,34,0,.15); }
+    .toggle-btn.active-fww  { border-color: var(--fww-color);  color: var(--text); background: rgba(255,140,0,.12); }
+    .toggle-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+    .tabs-nav {
+      display: flex;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      padding: 7px 14px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: all .2s;
+      background: transparent;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+    }
+    .tab-btn.active { color: var(--fire); border-bottom-color: var(--fire); }
+
+    .tab-panel { display: none; flex: 1; flex-direction: column; min-height: 0; }
+    .tab-panel.active { display: flex; }
+
+    .spc-img-wrap {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+    }
+    .spc-img-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; display: block; }
+
+    .spc-table-wrap { flex: 1; min-height: 0; overflow: auto; }
+    .spc-table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+
+    .spc-table-wrap th {
+      background: var(--bg-alt);
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.65rem;
+      letter-spacing: .05em;
+      padding: 7px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+    }
+    .spc-table-wrap td { padding: 7px 10px; border-bottom: 1px solid rgba(48,54,61,.5); vertical-align: middle; }
+    .spc-table-wrap tr:hover td { background: rgba(255,255,255,.025); }
+
+    .cat-badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+    .cat-extreme  { background: var(--extreme-bg);  color: var(--extreme-txt);  border: 1px solid rgba(139,0,0,.5); }
+    .cat-critical { background: var(--critical-bg); color: var(--critical-txt); border: 1px solid rgba(204,34,0,.4); }
+    .cat-elevated { background: var(--elevated-bg); color: var(--elevated-txt); border: 1px solid rgba(255,140,0,.35); }
+    .cat-none     { background: rgba(139,148,158,.15); color: var(--muted); border: 1px solid rgba(139,148,158,.3); }
+
+    .source-note {
+      padding: 5px 12px;
+      font-size: 0.67rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      background: var(--bg-alt);
+      flex-shrink: 0;
+    }
+    .source-note a { color: var(--fire); text-decoration: none; }
+    .source-note a:hover { text-decoration: underline; }
+
+    .nwcg-img-wrap {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      background: #111;
+    }
+    .nwcg-img-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; border-radius: 3px; }
+
+    .nwcg-img-error {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 20px;
+    }
+    .nwcg-img-error a { color: var(--fire); }
+
+    .alerts-scroll { overflow-y: auto; flex: 1; min-height: 0; }
+    .alerts-scroll::-webkit-scrollbar { width: 4px; }
+    .alerts-scroll::-webkit-scrollbar-track { background: var(--bg-card); }
+    .alerts-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .alert-item { padding: 9px 12px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .15s; }
+    .alert-item:last-child { border-bottom: none; }
+    .alert-item:hover { background: rgba(255,255,255,.03); }
+
+    .alert-item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 5px; margin-bottom: 4px; }
+
+    .evt-badge { font-size: 0.62rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; white-space: nowrap; }
+    .evt-rfw { background: rgba(204,34,0,.2);  color: #ff4433; border: 1px solid rgba(204,34,0,.4); }
+    .evt-fww { background: rgba(255,140,0,.18); color: #ffaa33; border: 1px solid rgba(255,140,0,.4); }
+
+    .alert-expires { font-size: 0.65rem; color: var(--muted); white-space: nowrap; }
+    .alert-area { font-size: 0.77rem; font-weight: 600; color: var(--text); margin-bottom: 2px; line-height: 1.3; }
+    .alert-office { font-size: 0.68rem; color: var(--muted); margin-bottom: 3px; }
+
+    .alert-headline {
+      font-size: 0.7rem;
+      color: var(--muted);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .loading { display: flex; align-items: center; justify-content: center; padding: 20px; gap: 8px; color: var(--muted); font-size: 0.8rem; }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,107,53,.3);
+      border-top-color: var(--fire);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-banner {
+      background: rgba(204,34,0,.1);
+      border: 1px solid rgba(204,34,0,.3);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin: 10px;
+      font-size: 0.75rem;
+      color: #ff6633;
+    }
+
+    .no-data { padding: 20px; text-align: center; font-size: 0.8rem; color: var(--muted); }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.75);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      max-width: 640px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    }
+
+    .modal-head {
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      background: var(--bg-card);
+      z-index: 1;
+    }
+    .modal-head h3 { font-size: 0.95rem; font-weight: 600; line-height: 1.3; margin-top: 5px; }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.3rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 2px 5px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .modal-close:hover { color: var(--text); background: var(--bg-alt); }
+
+    .modal-body { padding: 16px 18px; }
+
+    .modal-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 14px; }
+    .meta-box { background: var(--bg-alt); border-radius: 5px; padding: 8px 10px; }
+    .meta-lbl { font-size: 0.62rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 2px; }
+    .meta-val { font-size: 0.8rem; font-weight: 500; color: var(--text); }
+
+    .modal-headline { font-weight: 600; font-size: 0.84rem; color: var(--text); margin-bottom: 10px; }
+    .modal-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.7; white-space: pre-wrap; margin-bottom: 12px; }
+    .modal-instruction {
+      background: rgba(255,107,53,.07);
+      border-left: 3px solid var(--fire);
+      padding: 9px 12px;
+      border-radius: 0 5px 5px 0;
+      font-size: 0.78rem;
+      color: var(--text);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    footer {
+      text-align: center;
+      padding: 6px 14px;
+      font-size: 0.67rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    footer a { color: var(--fire); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    footer .disclaimer { display: inline; margin-left: 8px; color: rgba(139,148,158,.5); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="fire-icon">&#x1F525;</div>
+    <h1>
+      Wildfire Danger Situational Awareness
+      <span>NWS &bull; SPC &bull; NWCG &mdash; Auto-refreshes every 5 minutes</span>
+    </h1>
+  </div>
+  <div class="header-right">
+    <span class="data-sources">Sources: NWS API &bull; NOAA SPC &bull; NWCG NPSG</span>
+    <span class="timestamp-badge">Updated: <span id="ts">Loading&hellip;</span></span>
+    <button class="refresh-btn" onclick="refreshAll()">&#8635; Refresh</button>
+  </div>
+</header>
+
+<main>
+
+  <div class="top-row">
+
+    <div class="card">
+      <div class="card-head">
+        <h2>&#x1F5FA;&#xFE0F; NWS Active Fire Weather Alerts</h2>
+        <span id="alert-count-header" style="font-size:.7rem; color:var(--muted)"></span>
+      </div>
+      <div class="map-body">
+        <div class="layer-toggles">
+          <button class="toggle-btn active-rfw" id="tog-rfw" onclick="toggleLayer('rfw')">
+            <span class="toggle-dot" style="background:var(--rfw-color)"></span> Red Flag Warnings
+          </button>
+          <button class="toggle-btn active-fww" id="tog-fww" onclick="toggleLayer('fww')">
+            <span class="toggle-dot" style="background:var(--fww-color)"></span> Fire Weather Watches
+          </button>
+        </div>
+        <div id="map"></div>
+        <div class="map-footer">
+          <div class="legend">
+            <div class="legend-item"><div class="swatch swatch-rfw"></div> Red Flag Warning</div>
+            <div class="legend-item"><div class="swatch swatch-fww"></div> Fire Weather Watch</div>
+          </div>
+          <div class="alert-counts" id="alert-counts">
+            <div class="loading" style="padding:0"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>&#x1F4CA; SPC Fire Weather Outlooks</h2>
+        <a class="card-link" href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank">Full Page &#8599;</a>
+      </div>
+      <div class="tabs-nav">
+        <button class="tab-btn active" onclick="showTab('spc','spc-day1',this)">Day 1</button>
+        <button class="tab-btn" onclick="showTab('spc','spc-day2',this)">Day 2</button>
+        <button class="tab-btn" onclick="showTab('spc','spc-day38',this)">Day 3&ndash;8</button>
+        <button class="tab-btn" onclick="showTab('spc','spc-table',this)">Table</button>
+      </div>
+      <div class="tab-panel active" id="spc-day1">
+        <div class="spc-img-wrap">
+          <img src="https://www.spc.noaa.gov/products/exper/fire_wx/imgs/day1otlk_fire.gif"
+               alt="SPC Day 1 Fire Weather Outlook"
+               onerror="this.parentElement.innerHTML=spcImgFallback(1)">
+        </div>
+        <div class="source-note">SPC Day 1 (1200Z&ndash;1200Z) &mdash; <a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank">spc.noaa.gov &#8599;</a></div>
+      </div>
+      <div class="tab-panel" id="spc-day2">
+        <div class="spc-img-wrap">
+          <img src="https://www.spc.noaa.gov/products/exper/fire_wx/imgs/day2otlk_fire.gif"
+               alt="SPC Day 2 Fire Weather Outlook"
+               onerror="this.parentElement.innerHTML=spcImgFallback(2)">
+        </div>
+        <div class="source-note">SPC Day 2 (1200Z&ndash;1200Z) &mdash; <a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank">spc.noaa.gov &#8599;</a></div>
+      </div>
+      <div class="tab-panel" id="spc-day38">
+        <div class="spc-img-wrap">
+          <img src="https://www.spc.noaa.gov/products/exper/fire_wx/imgs/day38otlk_fire.gif"
+               alt="SPC Day 3-8 Fire Weather Outlook"
+               onerror="this.parentElement.innerHTML=spcImgFallback('3-8')">
+        </div>
+        <div class="source-note">SPC Extended (Day 3&ndash;8) &mdash; <a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank">spc.noaa.gov &#8599;</a></div>
+      </div>
+      <div class="tab-panel" id="spc-table">
+        <div class="spc-table-wrap" id="spc-table-inner">
+          <div class="loading"><div class="spinner"></div> Fetching SPC outlook table&hellip;</div>
+        </div>
+        <div class="source-note"><a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank">NOAA Storm Prediction Center &mdash; Experimental Fire Weather Outlooks &#8599;</a></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-row">
+
+    <div class="card">
+      <div class="card-head">
+        <h2>&#x1F332; NWCG 7-Day Fire Weather Outlook</h2>
+        <a class="card-link" href="https://fsapps.nwcg.gov/psp/npsg/forecast/home/staticmaps" target="_blank">Static Maps &#8599;</a>
+      </div>
+      <div class="tabs-nav" id="nwcg-tabs-nav"></div>
+      <div id="nwcg-panels" style="flex:1; min-height:0; display:flex; flex-direction:column;"></div>
+      <div class="source-note">
+        <a href="https://fsapps.nwcg.gov/psp/npsg/forecast/home/staticmaps" target="_blank">NWCG NPSG Forecast Static Maps &#8599;</a>
+        &bull; Updated each weekday by mid-afternoon MT &bull;
+        <a href="https://fsapps.nwcg.gov/psp/arcgis/rest/services/npsg/outlooks_forecast/MapServer" target="_blank">MapServer &#8599;</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>&#x26A0;&#xFE0F; Active NWS Alerts</h2>
+        <span id="alert-total" style="font-size:.7rem; color:var(--muted)"></span>
+      </div>
+      <div class="alerts-scroll">
+        <ul id="alerts-list" style="list-style:none">
+          <li class="loading"><div class="spinner"></div> Loading alerts&hellip;</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  Data: <a href="https://api.weather.gov" target="_blank">NWS API</a> &bull;
+  <a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank">NOAA SPC</a> &bull;
+  <a href="https://fsapps.nwcg.gov/psp/npsg/forecast/home/staticmaps" target="_blank">NWCG NPSG</a>
+  <span class="disclaimer">For situational awareness only. Always consult official sources and local authorities for emergency decisions.</span>
+</footer>
+
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div id="modal-badge" style="margin-bottom:5px"></div>
+        <h3 id="modal-title"></h3>
+      </div>
+      <button class="modal-close" onclick="closeModal()" aria-label="Close">&#215;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-meta" id="modal-meta"></div>
+      <div class="modal-headline" id="modal-headline"></div>
+      <div class="modal-desc" id="modal-desc"></div>
+      <div class="modal-instruction" id="modal-instr" style="display:none"></div>
+    </div>
+  </div>
+</div>
+<script>
+const NWS_URL   = 'https://api.weather.gov/alerts/active?event=Red%20Flag%20Warning%2CFire%20Weather%20Watch&status=actual';
+const NWCG_MS   = 'https://fsapps.nwcg.gov/psp/arcgis/rest/services/npsg/outlooks_forecast/MapServer';
+const REFRESH_MS = 5 * 60 * 1000;
+
+const NWCG_DAYS = [
+  { label: 'Day 1', id: 0 },
+  { label: 'Day 2', id: 1 },
+  { label: 'Day 3', id: 2 },
+  { label: 'Day 4', id: 3 },
+  { label: 'Day 5', id: 4 },
+  { label: 'Day 6', id: 5 },
+  { label: 'Day 7', id: 6 },
+];
+
+const NWCG_BBOX = '-124.84,17.6,-64.51,49.4';
+const NWCG_W = 900;
+const NWCG_H = 480;
+
+function nwcgExportUrl(layerId) {
+  return `${NWCG_MS}/export?layers=show:${layerId}&bbox=${NWCG_BBOX}&bboxSR=4326&imageSR=4326&size=${NWCG_W},${NWCG_H}&format=png32&f=image&dpi=96&transparent=false`;
+}
+
+(function buildNWCGTabs() {
+  const nav    = document.getElementById('nwcg-tabs-nav');
+  const panels = document.getElementById('nwcg-panels');
+
+  NWCG_DAYS.forEach((day, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
+    btn.textContent = day.label;
+    btn.onclick = () => showTab('nwcg', `nwcg-day${i}`, btn);
+    nav.appendChild(btn);
+
+    const panel = document.createElement('div');
+    panel.className = 'tab-panel' + (i === 0 ? ' active' : '');
+    panel.id = `nwcg-day${i}`;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'nwcg-img-wrap';
+
+    const img = document.createElement('img');
+    img.src = nwcgExportUrl(day.id);
+    img.alt = `NWCG ${day.label} Fire Weather Outlook`;
+    img.onerror = function() {
+      wrap.innerHTML = `<div class="nwcg-img-error">
+        <div>Map image unavailable</div>
+        <a href="https://fsapps.nwcg.gov/psp/npsg/forecast/home/staticmaps" target="_blank">View on NWCG &#8599;</a>
+      </div>`;
+    };
+
+    wrap.appendChild(img);
+    panel.appendChild(wrap);
+    panels.appendChild(panel);
+  });
+})();
+
+const map = L.map('map', { center: [39.5, -98.35], zoom: 4 });
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 19
+}).addTo(map);
+
+requestAnimationFrame(() => map.invalidateSize());
+
+const layers = {
+  rfw: L.layerGroup().addTo(map),
+  fww: L.layerGroup().addTo(map),
+};
+const layerVisible = { rfw: true, fww: true };
+
+function toggleLayer(key) {
+  layerVisible[key] = !layerVisible[key];
+  layerVisible[key] ? map.addLayer(layers[key]) : map.removeLayer(layers[key]);
+  document.getElementById('tog-' + key).className =
+    layerVisible[key] ? `toggle-btn active-${key}` : 'toggle-btn';
+}
+
+let allAlerts   = [];
+let sortedAlerts = [];
+
+async function fetchAlerts() {
+  try {
+    const resp = await fetch(NWS_URL, { headers: { Accept: 'application/geo+json' } });
+    if (!resp.ok) throw new Error(`NWS API HTTP ${resp.status}`);
+    const data = await resp.json();
+    allAlerts = data.features || [];
+
+    const hasGeom  = allAlerts.filter(f => f.geometry);
+    const needZone = allAlerts.filter(f => !f.geometry);
+
+    const zoneUrlSet = new Set();
+    needZone.forEach(f => (f.properties.affectedZones || []).forEach(u => zoneUrlSet.add(u)));
+
+    const zoneGeoms = zoneUrlSet.size ? await fetchZoneGeoms(zoneUrlSet) : {};
+
+    const zoneAlertMap = {};
+    needZone.forEach(alert => {
+      (alert.properties.affectedZones || []).forEach(u => {
+        if (!zoneAlertMap[u]) zoneAlertMap[u] = [];
+        zoneAlertMap[u].push(alert);
+      });
+    });
+
+    layers.rfw.clearLayers();
+    layers.fww.clearLayers();
+
+    hasGeom.forEach(f => addAlertPolygon(f.geometry, f.properties));
+
+    for (const [url, geom] of Object.entries(zoneGeoms)) {
+      if (!geom) continue;
+      const alerts = zoneAlertMap[url] || [];
+      if (!alerts.length) continue;
+      const primary = alerts.find(a => a.properties.event === 'Red Flag Warning') || alerts[0];
+      addAlertPolygon(geom, primary.properties);
+    }
+
+    buildAlertList();
+    updateAlertCounts();
+    updateTimestamp();
+
+  } catch (err) {
+    console.error('Alert fetch error:', err);
+    document.getElementById('alert-counts').innerHTML =
+      `<span style="color:var(--fire);font-size:.7rem">&#9888; ${err.message}</span>`;
+    document.getElementById('alerts-list').innerHTML =
+      `<li><div class="error-banner">Could not load NWS alerts: ${err.message}</div></li>`;
+  }
+}
+
+async function fetchZoneGeoms(zoneUrlSet) {
+  const geoms = {};
+  const urls  = [...zoneUrlSet];
+  const CHUNK = 20;
+  for (let i = 0; i < urls.length; i += CHUNK) {
+    await Promise.all(urls.slice(i, i + CHUNK).map(async url => {
+      try {
+        const resp = await fetch(url, { headers: { Accept: 'application/geo+json' } });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.geometry) geoms[url] = data.geometry;
+      } catch (e) {
+        console.warn('Zone fetch failed:', url, e);
+      }
+    }));
+  }
+  return geoms;
+}
+
+function addAlertPolygon(geometry, props) {
+  if (!geometry) return;
+  const isRFW = props.event === 'Red Flag Warning';
+  const style = isRFW
+    ? { color: '#cc2200', fillColor: 'rgba(204,34,0,0.45)',  weight: 2.5, opacity: 1, fillOpacity: 0.55 }
+    : { color: '#ff8c00', fillColor: 'rgba(255,140,0,0.40)', weight: 2,   opacity: 0.9, fillOpacity: 0.50 };
+  try {
+    L.geoJSON({ type: 'Feature', geometry, properties: props }, {
+      style,
+      onEachFeature: (feat, lyr) => {
+        lyr.bindTooltip(
+          `<strong>${props.event}</strong><br>${props.areaDesc || ''}<br><em>${props.senderName || ''}</em>`,
+          { sticky: true, className: 'leaflet-tooltip-dark' }
+        );
+        lyr.on('click', () => openModal(props));
+      }
+    }).addTo(layers[isRFW ? 'rfw' : 'fww']);
+  } catch (e) {
+    console.warn('Polygon render failed:', e);
+  }
+}
+
+function buildAlertList() {
+  const list = document.getElementById('alerts-list');
+  if (!allAlerts.length) {
+    list.innerHTML = '<li class="no-data">No active Red Flag Warnings or Fire Weather Watches.</li>';
+    return;
+  }
+  sortedAlerts = [...allAlerts].sort((a, b) => {
+    const pa = a.properties.event === 'Red Flag Warning' ? 0 : 1;
+    const pb = b.properties.event === 'Red Flag Warning' ? 0 : 1;
+    return pa !== pb ? pa - pb : (a.properties.areaDesc || '').localeCompare(b.properties.areaDesc || '');
+  });
+  list.innerHTML = sortedAlerts.map((f, idx) => {
+    const p = f.properties;
+    const isRFW = p.event === 'Red Flag Warning';
+    const exp = p.expires
+      ? new Date(p.expires).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit', timeZoneName:'short' })
+      : 'Unknown';
+    return `
+      <li class="alert-item" onclick="openModal(${idx})">
+        <div class="alert-item-top">
+          <span class="evt-badge ${isRFW ? 'evt-rfw' : 'evt-fww'}">${p.event}</span>
+          <span class="alert-expires">Exp ${exp}</span>
+        </div>
+        <div class="alert-area">${p.areaDesc || 'Unknown Area'}</div>
+        <div class="alert-office">${p.senderName || ''}</div>
+        <div class="alert-headline">${p.headline || p.description?.slice(0, 120) || ''}</div>
+      </li>`;
+  }).join('');
+  document.getElementById('alert-total').textContent = `${allAlerts.length} active`;
+}
+
+function updateAlertCounts() {
+  const rfw = allAlerts.filter(f => f.properties.event === 'Red Flag Warning').length;
+  const fww = allAlerts.filter(f => f.properties.event === 'Fire Weather Watch').length;
+  document.getElementById('alert-counts').innerHTML = `
+    <div class="count-badge">
+      <span class="count-num red">${rfw}</span>
+      <span class="count-label">Red Flag${rfw !== 1 ? 's' : ''}</span>
+    </div>
+    <div class="count-badge">
+      <span class="count-num orange">${fww}</span>
+      <span class="count-label">Watch${fww !== 1 ? 'es' : ''}</span>
+    </div>`;
+  document.getElementById('alert-count-header').textContent =
+    `${rfw + fww} active alert${rfw + fww !== 1 ? 's' : ''}`;
+}
+
+async function loadSPCTable() {
+  const container = document.getElementById('spc-table-inner');
+  try {
+    const resp = await fetch('https://www.spc.noaa.gov/products/exper/fire_wx/', { mode: 'cors' });
+    if (!resp.ok) throw new Error('SPC page not accessible');
+    const html = await resp.text();
+    const doc  = new DOMParser().parseFromString(html, 'text/html');
+    let bestTable = null, bestScore = 0;
+    doc.querySelectorAll('table').forEach(t => {
+      const score = t.querySelectorAll('tr').length;
+      if (score > bestScore) { bestTable = t; bestScore = score; }
+    });
+    if (!bestTable) throw new Error('No table found');
+    bestTable.removeAttribute('bgcolor');
+    bestTable.removeAttribute('style');
+    bestTable.querySelectorAll('[bgcolor],[style]').forEach(el => {
+      el.removeAttribute('bgcolor'); el.removeAttribute('style');
+    });
+    bestTable.querySelectorAll('a').forEach(a => {
+      if (!a.href.startsWith('http')) a.href = 'https://www.spc.noaa.gov' + (a.getAttribute('href') || '');
+      a.target = '_blank';
+      a.style.color = 'var(--fire)';
+    });
+    container.innerHTML = '';
+    container.appendChild(bestTable);
+  } catch (err) {
+    renderSPCFallbackTable(container);
+  }
+}
+
+function renderSPCFallbackTable(container) {
+  const now = new Date();
+  const pad = n => { const d = new Date(now); d.setDate(d.getDate() + n); return d; };
+  const fmt = d => d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+  container.innerHTML = `
+    <table>
+      <thead><tr><th>Period</th><th>Date</th><th>Valid Window</th><th>View</th></tr></thead>
+      <tbody>
+        ${[
+          { l:'Day 1',        d:pad(0), v:'1200Z Today &rarr; 1200Z Tomorrow' },
+          { l:'Day 2',        d:pad(1), v:'1200Z Tomorrow &rarr; 1200Z +2' },
+          { l:'Day 3&ndash;8', d:null,  v:'Extended 3&ndash;8 day period' },
+        ].map(r => `<tr>
+          <td><strong>${r.l}</strong></td>
+          <td>${r.d ? fmt(r.d) : '&mdash;'}</td>
+          <td style="color:var(--muted)">${r.v}</td>
+          <td><a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank" style="color:var(--fire)">View &#8599;</a></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <p style="padding:8px 10px; font-size:.7rem; color:var(--muted)">
+      &#9432; Table unavailable via CORS &mdash; see image tabs above.
+      <a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank" style="color:var(--fire)">spc.noaa.gov &#8599;</a>
+    </p>`;
+}
+
+function spcImgFallback(day) {
+  return `<div class="no-data">Day ${day} image unavailable.
+    <br><a href="https://www.spc.noaa.gov/products/exper/fire_wx/" target="_blank" style="color:var(--fire)">View on SPC &#8599;</a></div>`;
+}
+
+function showTab(group, panelId, clickedBtn) {
+  document.querySelectorAll(`[id^="${group}-"]`).forEach(p => p.classList.remove('active'));
+  clickedBtn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+  clickedBtn.classList.add('active');
+}
+
+function openModal(indexOrProps) {
+  const props = typeof indexOrProps === 'number'
+    ? sortedAlerts[indexOrProps]?.properties
+    : indexOrProps;
+  if (!props) return;
+  const isRFW = props.event === 'Red Flag Warning';
+  document.getElementById('modal-badge').innerHTML =
+    `<span class="evt-badge ${isRFW ? 'evt-rfw' : 'evt-fww'}">${props.event || 'Alert'}</span>`;
+  document.getElementById('modal-title').textContent = props.areaDesc || 'Unknown Area';
+  document.getElementById('modal-headline').textContent = props.headline || '';
+  document.getElementById('modal-desc').textContent = props.description || 'No description available.';
+  const instr = props.instruction || '';
+  const instrEl = document.getElementById('modal-instr');
+  instrEl.style.display = instr ? 'block' : 'none';
+  instrEl.textContent = instr;
+  const fmt = iso => iso ? new Date(iso).toLocaleString('en-US', {
+    weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit', timeZoneName:'short'
+  }) : 'N/A';
+  document.getElementById('modal-meta').innerHTML = `
+    <div class="meta-box"><div class="meta-lbl">Issuing Office</div><div class="meta-val">${props.senderName || 'NWS'}</div></div>
+    <div class="meta-box"><div class="meta-lbl">Onset</div><div class="meta-val">${fmt(props.onset)}</div></div>
+    <div class="meta-box"><div class="meta-lbl">Effective</div><div class="meta-val">${fmt(props.effective)}</div></div>
+    <div class="meta-box"><div class="meta-lbl">Expires</div><div class="meta-val">${fmt(props.expires)}</div></div>
+    <div class="meta-box"><div class="meta-lbl">Severity</div><div class="meta-val">${props.severity || 'N/A'}</div></div>
+    <div class="meta-box"><div class="meta-lbl">Certainty</div><div class="meta-val">${props.certainty || 'N/A'}</div></div>`;
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+function updateTimestamp() {
+  document.getElementById('ts').textContent = new Date().toLocaleTimeString('en-US', {
+    hour:'numeric', minute:'2-digit', second:'2-digit', timeZoneName:'short'
+  });
+}
+
+function refreshAll() {
+  document.getElementById('alerts-list').innerHTML =
+    '<li class="loading"><div class="spinner"></div> Loading alerts&hellip;</li>';
+  document.getElementById('alert-counts').innerHTML =
+    '<div class="loading" style="padding:0"><div class="spinner"></div></div>';
+  fetchAlerts();
+  NWCG_DAYS.forEach((day, i) => {
+    const wrap = document.querySelector(`#nwcg-day${i} .nwcg-img-wrap`);
+    if (!wrap) return;
+    const img = wrap.querySelector('img');
+    if (img) img.src = nwcgExportUrl(day.id) + `&_t=${Date.now()}`;
+  });
+}
+
+const ttStyle = document.createElement('style');
+ttStyle.textContent = `
+  .leaflet-tooltip-dark {
+    background: #1c2128;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    font-size: 11px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.5);
+  }
+  .leaflet-tooltip-dark::before { border-top-color: #30363d; }
+`;
+document.head.appendChild(ttStyle);
+
+setInterval(refreshAll, REFRESH_MS);
+
+fetchAlerts();
+loadSPCTable();
+updateTimestamp();
+</script>
+</body>
+</html>
