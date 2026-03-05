@@ -473,7 +473,6 @@
 // ── Constants ─────────────────────────────────────────────────────────────
 const NWS_URL    = 'https://api.weather.gov/alerts/active?event=Red%20Flag%20Warning%2CFire%20Weather%20Watch&status=actual';
 const NWCG_URL   = 'https://fsapps.nwcg.gov/psp/rest/services/npsg/outlooks_forecast/MapServer';
-const NDFD_WMS   = 'https://opengeo.ncep.noaa.gov/geoserver/conus/wms';
 const REFRESH_MS = 5 * 60 * 1000;
 
 // ── Layer state ───────────────────────────────────────────────────────────
@@ -533,36 +532,23 @@ for (let i = 0; i < 7; i++) {
   });
 }
 
-// ── NWS NDFD WMS forecast layers ──────────────────────────────────────────
-// Create placeholder groups; real WMS layers swapped in after GetCapabilities discovery
-const NDFD_OPTS = { format: 'image/png', transparent: true, opacity: 0.75, version: '1.1.1', attribution: 'NWS NDFD' };
-const NDFD_PATTERNS = {
-  precip: [/pop12/i, /prob.*precip/i, /precip.*prob/i],
-  wx:     [/\bwx\b/i, /weather.*type/i, /predominant/i, /wtype/i],
-  minrh:  [/minrh/i, /min.*rh\b/i, /min.*humid/i],
-  maxrh:  [/maxrh/i, /max.*rh\b/i, /max.*humid/i],
-  hitemp: [/maxt\b/i, /max.*temp/i, /high.*temp/i],
-  lotemp: [/mint\b/i, /min.*temp/i, /low.*temp/i],
+// ── NWS NDFD forecast layers (image overlays over CONUS) ──────────────────
+// NWS publishes regularly-updated CONUS forecast maps as PNGs at known URLs.
+// L.imageOverlay uses <img> so no CORS restriction. Note: NWS images use
+// Lambert Conformal Conic projection; slight distortion vs Web Mercator is
+// acceptable for situational awareness at continental scale.
+const CONUS_BOUNDS = [[20.0, -126.0], [50.0, -61.0]];
+const NDFD_URLS = {
+  precip: 'https://graphical.weather.gov/images/conus/Pop121_conus.png',
+  wx:     'https://graphical.weather.gov/images/conus/Wx1_conus.png',
+  minrh:  'https://graphical.weather.gov/images/conus/MinRh1_conus.png',
+  maxrh:  'https://graphical.weather.gov/images/conus/MaxRh1_conus.png',
+  hitemp: 'https://graphical.weather.gov/images/conus/MaxT1_conus.png',
+  lotemp: 'https://graphical.weather.gov/images/conus/MinT1_conus.png',
 };
-['precip','wx','minrh','maxrh','hitemp','lotemp'].forEach(k => { leafletLayers[k] = L.layerGroup(); });
-
-(async function initNDFDLayers() {
-  try {
-    const resp = await fetch(NDFD_WMS + '?service=WMS&version=1.1.1&request=GetCapabilities');
-    if (!resp.ok) throw new Error('GetCap HTTP ' + resp.status);
-    const doc = new DOMParser().parseFromString(await resp.text(), 'text/xml');
-    const names = [...doc.querySelectorAll('Layer > Name')].map(n => n.textContent.trim()).filter(Boolean);
-    console.log('NDFD WMS layers:', names.join(', '));
-    for (const [key, patterns] of Object.entries(NDFD_PATTERNS)) {
-      const layerName = names.find(n => patterns.some(p => p.test(n)));
-      if (!layerName) { console.warn('NDFD: no match for', key); continue; }
-      console.log('NDFD:', key, '->', layerName);
-      if (layerVisible[key]) map.removeLayer(leafletLayers[key]);
-      leafletLayers[key] = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: layerName });
-      if (layerVisible[key]) map.addLayer(leafletLayers[key]);
-    }
-  } catch(e) { console.warn('NDFD discovery failed:', e.message); }
-})();
+for (const [key, url] of Object.entries(NDFD_URLS)) {
+  leafletLayers[key] = L.imageOverlay(url, CONUS_BOUNDS, { opacity: 0.80 });
+}
 
 // ── Dynamic legend (must be defined before updateLegend is called) ─────────
 const LEGEND_ENTRIES = {
@@ -590,13 +576,21 @@ let nwcgLegendItems = [];
     const data = await resp.json();
     const layer0 = (data.layers || []).find(l => l.layerId === 0) || (data.layers || [])[0];
     if (!layer0?.legend) throw new Error('no legend data');
+    const seen = new Set();
     nwcgLegendItems = layer0.legend
-      .filter(item => item.label && item.label.trim() !== '<all other values>')
+      .filter(item => {
+        const lbl = (item.label || '').trim();
+        // Skip empty, numeric-only, <Null>, and <all other values>
+        if (!lbl || lbl === '<all other values>' || lbl === '<Null>' || /^\d+$/.test(lbl)) return false;
+        if (seen.has(lbl.toLowerCase())) return false;
+        seen.add(lbl.toLowerCase());
+        return true;
+      })
       .map(item => ({
         imgSrc: `data:${item.contentType};base64,${item.imageData}`,
-        label: item.label,
+        label: item.label.trim(),
       }));
-    console.log('NWCG legend:', nwcgLegendItems.map(i => i.label).join(', '));
+    console.log('NWCG legend categories:', nwcgLegendItems.map(i => i.label).join(', '));
     updateLegend();
   } catch(e) { console.warn('NWCG legend fetch failed:', e.message); }
 })();
