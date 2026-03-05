@@ -93,7 +93,7 @@
       min-height: 0;
       padding: 8px;
       display: grid;
-      grid-template-rows: 1fr 1fr;
+      grid-template-rows: 1fr 1fr auto;
       gap: 8px;
       overflow: hidden;
     }
@@ -133,6 +133,28 @@
 
     .card-link { color: var(--fire); font-size: 0.7rem; text-decoration: none; white-space: nowrap; }
     .card-link:hover { text-decoration: underline; }
+
+    .collapse-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 0 2px;
+      font-size: 0.72rem;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: transform .2s, color .15s;
+    }
+    .collapse-btn:hover { color: var(--text); }
+    .collapse-btn.open { transform: rotate(90deg); }
+
+    #alerts-body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+
+    .wfas-row { min-height: 0; }
+    .wfas-img-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
+    @media (max-width: 700px) { .wfas-img-grid { grid-template-columns: 1fr; } }
+    .wfas-img-label { font-size: 0.72rem; font-weight: 600; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+    .wfas-img-wrap img { width: 100%; border-radius: 4px; display: block; }
 
     .map-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
@@ -523,15 +545,48 @@
     <div class="card">
       <div class="card-head">
         <h2>&#x26A0;&#xFE0F; Active NWS Alerts</h2>
-        <span id="alert-total" style="font-size:.7rem; color:var(--muted)"></span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="alert-total" style="font-size:.7rem; color:var(--muted)"></span>
+          <button class="collapse-btn" id="btn-alerts" onclick="toggleCollapse('alerts-body','btn-alerts')" aria-label="Toggle alerts list">&#9654;</button>
+        </div>
       </div>
-      <div class="alerts-scroll">
-        <ul id="alerts-list" style="list-style:none">
-          <li class="loading"><div class="spinner"></div> Loading alerts&hellip;</li>
-        </ul>
+      <div id="alerts-body" style="display:none">
+        <div class="alerts-scroll">
+          <ul id="alerts-list" style="list-style:none">
+            <li class="loading"><div class="spinner"></div> Loading alerts&hellip;</li>
+          </ul>
+        </div>
       </div>
     </div>
 
+  </div>
+
+  <div class="wfas-row">
+    <div class="card">
+      <div class="card-head">
+        <h2>&#x1F4C8; WFAS Fire Danger Maps</h2>
+        <div style="display:flex;align-items:center;gap:8px">
+          <a class="card-link" href="https://www.wfas.net" target="_blank">WFAS &#8599;</a>
+          <button class="collapse-btn" id="btn-wfas" onclick="toggleCollapse('wfas-body','btn-wfas')" aria-label="Toggle WFAS maps">&#9654;</button>
+        </div>
+      </div>
+      <div id="wfas-body" style="display:none">
+        <div class="wfas-img-grid">
+          <div class="wfas-img-wrap">
+            <div class="wfas-img-label">10-hr Fuel Moisture</div>
+            <img src="https://www.wfas.net/images/firedanger/fm_10.png" alt="WFAS 10-hr Fuel Moisture Map">
+          </div>
+          <div class="wfas-img-wrap">
+            <div class="wfas-img-label">Keetch-Byram Drought Index (KBDI)</div>
+            <img src="https://www.wfas.net/images/firedanger/kbdi.png" alt="WFAS Keetch-Byram Drought Index Map">
+          </div>
+        </div>
+        <div class="source-note">
+          <a href="https://www.wfas.net" target="_blank">Wildland Fire Assessment System (WFAS) &#8599;</a>
+          &bull; Updated daily
+        </div>
+      </div>
+    </div>
   </div>
 
 </main>
@@ -836,6 +891,14 @@ function renderSPCFallbackTable(container) {
     </p>`;
 }
 
+
+function toggleCollapse(bodyId, btnId) {
+  const body = document.getElementById(bodyId);
+  const btn  = document.getElementById(btnId);
+  const opening = body.style.display === 'none';
+  body.style.display = opening ? '' : 'none';
+  btn.classList.toggle('open', opening);
+}
 
 function showTab(group, panelId, clickedBtn) {
   document.querySelectorAll(`[id^="${group}-"]`).forEach(p => p.classList.remove('active'));
