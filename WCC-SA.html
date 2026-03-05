@@ -439,11 +439,6 @@
       <img class="accord-img" src="https://www.wfas.net/images/firedanger/kbdi.png" alt="WFAS Keetch-Byram Drought Index Map">
     </div>
 
-    <div style="padding:8px 12px; border-top: 1px solid var(--border); flex-shrink:0;">
-      <div id="alert-counts" style="display:flex;gap:14px;flex-wrap:wrap;">
-        <div class="loading" style="padding:0"><div class="spinner"></div></div>
-      </div>
-    </div>
 
   </div>
 
@@ -539,13 +534,35 @@ for (let i = 0; i < 7; i++) {
 }
 
 // ── NWS NDFD WMS forecast layers ──────────────────────────────────────────
+// Create placeholder groups; real WMS layers swapped in after GetCapabilities discovery
 const NDFD_OPTS = { format: 'image/png', transparent: true, opacity: 0.75, version: '1.1.1', attribution: 'NWS NDFD' };
-leafletLayers.precip = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: 'ndfd_conus_pop12' });
-leafletLayers.wx     = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: 'ndfd_conus_wx'    });
-leafletLayers.minrh  = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: 'ndfd_conus_minrh' });
-leafletLayers.maxrh  = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: 'ndfd_conus_maxrh' });
-leafletLayers.hitemp = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: 'ndfd_conus_maxt'  });
-leafletLayers.lotemp = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: 'ndfd_conus_mint'  });
+const NDFD_PATTERNS = {
+  precip: [/pop12/i, /prob.*precip/i, /precip.*prob/i],
+  wx:     [/\bwx\b/i, /weather.*type/i, /predominant/i, /wtype/i],
+  minrh:  [/minrh/i, /min.*rh\b/i, /min.*humid/i],
+  maxrh:  [/maxrh/i, /max.*rh\b/i, /max.*humid/i],
+  hitemp: [/maxt\b/i, /max.*temp/i, /high.*temp/i],
+  lotemp: [/mint\b/i, /min.*temp/i, /low.*temp/i],
+};
+['precip','wx','minrh','maxrh','hitemp','lotemp'].forEach(k => { leafletLayers[k] = L.layerGroup(); });
+
+(async function initNDFDLayers() {
+  try {
+    const resp = await fetch(NDFD_WMS + '?service=WMS&version=1.1.1&request=GetCapabilities');
+    if (!resp.ok) throw new Error('GetCap HTTP ' + resp.status);
+    const doc = new DOMParser().parseFromString(await resp.text(), 'text/xml');
+    const names = [...doc.querySelectorAll('Layer > Name')].map(n => n.textContent.trim()).filter(Boolean);
+    console.log('NDFD WMS layers:', names.join(', '));
+    for (const [key, patterns] of Object.entries(NDFD_PATTERNS)) {
+      const layerName = names.find(n => patterns.some(p => p.test(n)));
+      if (!layerName) { console.warn('NDFD: no match for', key); continue; }
+      console.log('NDFD:', key, '->', layerName);
+      if (layerVisible[key]) map.removeLayer(leafletLayers[key]);
+      leafletLayers[key] = L.tileLayer.wms(NDFD_WMS, { ...NDFD_OPTS, layers: layerName });
+      if (layerVisible[key]) map.addLayer(leafletLayers[key]);
+    }
+  } catch(e) { console.warn('NDFD discovery failed:', e.message); }
+})();
 
 // ── Dynamic legend (must be defined before updateLegend is called) ─────────
 const LEGEND_ENTRIES = {
@@ -554,22 +571,35 @@ const LEGEND_ENTRIES = {
     { color: 'rgba(255,140,0,0.40)', border: '#ff8c00', label: 'Fire Weather Watch' },
   ],
   ndfd: [
-    { color: '#4499ff', border: '#4499ff', label: 'Precip % (NWS NDFD)' },
+    { color: '#4499ff', border: '#4499ff', label: 'Precip %' },
     { color: '#88ccff', border: '#88ccff', label: 'Precip Type' },
     { color: '#22cc77', border: '#22cc77', label: 'Min RH' },
     { color: '#00ffaa', border: '#00ffaa', label: 'Max RH' },
     { color: '#ff4400', border: '#ff4400', label: 'High Temp' },
     { color: '#2277dd', border: '#2277dd', label: 'Low Temp' },
   ],
-  nwcg: [
-    { color: '#d73027', border: '#d73027', label: 'High Fire Potential' },
-    { color: '#fc8d59', border: '#fc8d59', label: 'Elevated' },
-    { color: '#fee090', border: '#fee090', label: 'Normal' },
-    { color: '#91bfdb', border: '#91bfdb', label: 'Below Normal' },
-  ],
 };
-
 const NDFD_LEGEND_MAP = { precip: 0, wx: 1, minrh: 2, maxrh: 3, hitemp: 4, lotemp: 5 };
+
+// NWCG legend — fetched dynamically from the service
+let nwcgLegendItems = [];
+(async function fetchNWCGLegend() {
+  try {
+    const resp = await fetch(NWCG_URL + '/legend?f=json');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    const layer0 = (data.layers || []).find(l => l.layerId === 0) || (data.layers || [])[0];
+    if (!layer0?.legend) throw new Error('no legend data');
+    nwcgLegendItems = layer0.legend
+      .filter(item => item.label && item.label.trim() !== '<all other values>')
+      .map(item => ({
+        imgSrc: `data:${item.contentType};base64,${item.imageData}`,
+        label: item.label,
+      }));
+    console.log('NWCG legend:', nwcgLegendItems.map(i => i.label).join(', '));
+    updateLegend();
+  } catch(e) { console.warn('NWCG legend fetch failed:', e.message); }
+})();
 
 function updateLegend() {
   const bar   = document.getElementById('legend-bar');
@@ -580,9 +610,8 @@ function updateLegend() {
   Object.keys(NDFD_LEGEND_MAP).forEach(k => {
     if (layerVisible[k]) items.push(LEGEND_ENTRIES.ndfd[NDFD_LEGEND_MAP[k]]);
   });
-  if (Object.keys(LAYER_META).filter(k => k.startsWith('nwcg')).some(k => layerVisible[k])) {
-    LEGEND_ENTRIES.nwcg.forEach(e => items.push(e));
-  }
+  const anyNWCG = Object.keys(LAYER_META).filter(k => k.startsWith('nwcg')).some(k => layerVisible[k]);
+  if (anyNWCG) nwcgLegendItems.forEach(e => items.push(e));
 
   if (!items.length) {
     bar.innerHTML = '<span style="color:var(--muted)">No layers selected</span>';
@@ -590,11 +619,16 @@ function updateLegend() {
   }
 
   bar.innerHTML = '<span style="color:var(--muted);flex-shrink:0">Legend:</span>' +
-    items.map(e => `
-      <div class="legend-item">
-        <div class="legend-swatch" style="background:${e.color};border-color:${e.border}"></div>
-        <span style="color:var(--muted)">${e.label}</span>
-      </div>`).join('');
+    items.map(e => e.imgSrc
+      ? `<div class="legend-item">
+           <img src="${e.imgSrc}" style="width:16px;height:9px;border-radius:2px;flex-shrink:0;" alt="">
+           <span style="color:var(--muted)">${e.label}</span>
+         </div>`
+      : `<div class="legend-item">
+           <div class="legend-swatch" style="background:${e.color};border-color:${e.border}"></div>
+           <span style="color:var(--muted)">${e.label}</span>
+         </div>`
+    ).join('');
 }
 
 // ── Toggle helpers ────────────────────────────────────────────────────────
@@ -679,12 +713,9 @@ async function fetchAlerts() {
     }
 
     buildAlertList();
-    updateAlertCounts();
     updateTimestamp();
   } catch (err) {
     console.error('Alert fetch error:', err);
-    document.getElementById('alert-counts').innerHTML =
-      `<span style="color:var(--fire);font-size:.7rem">&#9888; ${err.message}</span>`;
     document.getElementById('alerts-list').innerHTML =
       `<li><div class="error-banner">Could not load NWS alerts: ${err.message}<br><small style="color:var(--muted)">Check browser console (F12) for details. If running from file://, try a local HTTP server instead.</small></div></li>`;
     // Auto-open accordion to show the error
@@ -766,21 +797,9 @@ function buildAlertList() {
         <div class="alert-headline">${p.headline || p.description?.slice(0, 120) || ''}</div>
       </li>`;
   }).join('');
-  document.getElementById('alert-total').textContent = `${allAlerts.length} active`;
-}
-
-function updateAlertCounts() {
   const rfw = allAlerts.filter(f => f.properties.event === 'Red Flag Warning').length;
   const fww = allAlerts.filter(f => f.properties.event === 'Fire Weather Watch').length;
-  document.getElementById('alert-counts').innerHTML = `
-    <div style="display:flex;align-items:baseline;gap:4px">
-      <span style="font-size:1.1rem;font-weight:700;color:#cc2200">${rfw}</span>
-      <span style="font-size:.7rem;color:var(--muted)">Red Flag${rfw !== 1 ? 's' : ''}</span>
-    </div>
-    <div style="display:flex;align-items:baseline;gap:4px">
-      <span style="font-size:1.1rem;font-weight:700;color:#ff8c00">${fww}</span>
-      <span style="font-size:.7rem;color:var(--muted)">Watch${fww !== 1 ? 'es' : ''}</span>
-    </div>`;
+  document.getElementById('alert-total').textContent = `${allAlerts.length} active`;
   document.getElementById('alert-count-header').textContent =
     `${rfw + fww} active alert${rfw + fww !== 1 ? 's' : ''}`;
 }
@@ -834,8 +853,6 @@ function updateTimestamp() {
 function refreshAll() {
   document.getElementById('alerts-list').innerHTML =
     '<li class="loading"><div class="spinner"></div> Loading alerts&hellip;</li>';
-  document.getElementById('alert-counts').innerHTML =
-    '<div class="loading" style="padding:0"><div class="spinner"></div></div>';
   fetchAlerts();
   // Redraw active map layers
   Object.keys(LAYER_META).forEach(key => {
