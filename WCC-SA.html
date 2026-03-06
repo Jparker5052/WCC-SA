@@ -308,11 +308,11 @@
     <div class="fire-icon">&#x1F525;</div>
     <h1>
       Wildfire Danger Situational Awareness
-      <span>NWS &bull; SPC &bull; NWCG &mdash; Auto-refreshes every 5 minutes</span>
+      <span>NWS &bull; SPC &bull; WFAS &mdash; Auto-refreshes every 5 minutes</span>
     </h1>
   </div>
   <div class="header-right">
-    <span class="data-sources">Sources: NWS API &bull; NOAA SPC &bull; NWCG NPSG</span>
+    <span class="data-sources">Sources: NWS API &bull; NOAA SPC &bull; WFAS GeoServer</span>
     <span class="timestamp-badge">Updated: <span id="ts">Loading&hellip;</span></span>
     <button class="refresh-btn" onclick="refreshAll()">&#8635; Refresh</button>
   </div>
@@ -340,38 +340,70 @@
       </div>
 
       <div class="layer-group">
-        <span class="layer-group-label">NWS Forecast</span>
-        <button class="toggle-btn" id="tog-precip" onclick="toggleLayer('precip')">
-          <span class="toggle-dot" style="background:#4499ff"></span>Precip %
+        <span class="layer-group-label">GFS / WPC Weather</span>
+        <button class="toggle-btn" id="tog-gfs_temp" onclick="toggleLayer('gfs_temp')">
+          <span class="toggle-dot" style="background:#ff6633"></span>Temperature
         </button>
-        <button class="toggle-btn" id="tog-wx" onclick="toggleLayer('wx')">
-          <span class="toggle-dot" style="background:#88ccff"></span>Precip Type
+        <button class="toggle-btn" id="tog-gfs_rh" onclick="toggleLayer('gfs_rh')">
+          <span class="toggle-dot" style="background:#33cc88"></span>Relative Humidity
         </button>
-        <button class="toggle-btn" id="tog-minrh" onclick="toggleLayer('minrh')">
-          <span class="toggle-dot" style="background:#22cc77"></span>Min RH
+        <button class="toggle-btn" id="tog-gfs_precip" onclick="toggleLayer('gfs_precip')">
+          <span class="toggle-dot" style="background:#4499ff"></span>Total Precipitation
         </button>
-        <button class="toggle-btn" id="tog-maxrh" onclick="toggleLayer('maxrh')">
-          <span class="toggle-dot" style="background:#00ffaa"></span>Max RH
+        <button class="toggle-btn" id="tog-wpc_06hr" onclick="toggleLayer('wpc_06hr')">
+          <span class="toggle-dot" style="background:#2288dd"></span>06hr Precip
         </button>
-        <button class="toggle-btn" id="tog-hitemp" onclick="toggleLayer('hitemp')">
-          <span class="toggle-dot" style="background:#ff4400"></span>High Temp
+        <button class="toggle-btn" id="tog-wpc_24hr" onclick="toggleLayer('wpc_24hr')">
+          <span class="toggle-dot" style="background:#1166bb"></span>24hr Precip
         </button>
-        <button class="toggle-btn" id="tog-lotemp" onclick="toggleLayer('lotemp')">
-          <span class="toggle-dot" style="background:#2277dd"></span>Low Temp
+        <button class="toggle-btn" id="tog-gfs_wdir" onclick="toggleLayer('gfs_wdir')">
+          <span class="toggle-dot" style="background:#ffee44"></span>Wind Direction
+        </button>
+        <button class="toggle-btn" id="tog-gfs_wspd" onclick="toggleLayer('gfs_wspd')">
+          <span class="toggle-dot" style="background:#ffcc22"></span>Wind Speed
         </button>
       </div>
 
       <div class="layer-group">
-        <span class="layer-group-label">NWCG Sig. Fire Potential</span>
-        <button class="toggle-btn" id="tog-nwcg0" onclick="toggleLayer('nwcg0')">
-          <span class="toggle-dot" style="background:#ffaa00"></span>Day 1
+        <span class="layer-group-label">GFS Fire Indices</span>
+        <button class="toggle-btn" id="tog-gfs_bi" onclick="toggleLayer('gfs_bi')">
+          <span class="toggle-dot" style="background:#ff4400"></span>BI Percentile
         </button>
-        <button class="toggle-btn" id="tog-nwcg1" onclick="toggleLayer('nwcg1')">Day 2</button>
-        <button class="toggle-btn" id="tog-nwcg2" onclick="toggleLayer('nwcg2')">Day 3</button>
-        <button class="toggle-btn" id="tog-nwcg3" onclick="toggleLayer('nwcg3')">Day 4</button>
-        <button class="toggle-btn" id="tog-nwcg4" onclick="toggleLayer('nwcg4')">Day 5</button>
-        <button class="toggle-btn" id="tog-nwcg5" onclick="toggleLayer('nwcg5')">Day 6</button>
-        <button class="toggle-btn" id="tog-nwcg6" onclick="toggleLayer('nwcg6')">Day 7</button>
+        <button class="toggle-btn" id="tog-gfs_erc" onclick="toggleLayer('gfs_erc')">
+          <span class="toggle-dot" style="background:#ff6600"></span>ERC Percentile
+        </button>
+        <button class="toggle-btn" id="tog-gfs_sfdi" onclick="toggleLayer('gfs_sfdi')">
+          <span class="toggle-dot" style="background:#ff0055"></span>SFDI Percentile
+        </button>
+      </div>
+
+      <div class="layer-group">
+        <span class="layer-group-label">WFAS Fire Danger</span>
+        <button class="toggle-btn" id="tog-wfas_bi" onclick="toggleLayer('wfas_bi')">
+          <span class="toggle-dot" style="background:#cc2200"></span>BI Percentile 7Band
+        </button>
+        <button class="toggle-btn" id="tog-wfas_erc" onclick="toggleLayer('wfas_erc')">
+          <span class="toggle-dot" style="background:#dd4400"></span>ERC Percentile 7Band
+        </button>
+        <button class="toggle-btn" id="tog-wfas_fm1000" onclick="toggleLayer('wfas_fm1000')">
+          <span class="toggle-dot" style="background:#669944"></span>1000-hr Fuel Moisture
+        </button>
+        <button class="toggle-btn" id="tog-wfas_sfdi" onclick="toggleLayer('wfas_sfdi')">
+          <span class="toggle-dot" style="background:#880000"></span>Severe Fire Danger
+        </button>
+      </div>
+
+      <div class="layer-group">
+        <span class="layer-group-label">WFAS Environment</span>
+        <button class="toggle-btn" id="tog-wfas_usdm" onclick="toggleLayer('wfas_usdm')">
+          <span class="toggle-dot" style="background:#996633"></span>USDM Drought
+        </button>
+        <button class="toggle-btn" id="tog-wfas_ndvi" onclick="toggleLayer('wfas_ndvi')">
+          <span class="toggle-dot" style="background:#44bb22"></span>Current NDVI
+        </button>
+        <button class="toggle-btn" id="tog-wfas_dispatch" onclick="toggleLayer('wfas_dispatch')">
+          <span class="toggle-dot" style="background:#88aacc"></span>Dispatch Boundaries
+        </button>
       </div>
 
     </div>
@@ -385,7 +417,7 @@
     <div class="source-note">
       <a href="https://api.weather.gov" target="_blank">NWS API</a> &bull;
       <a href="https://www.spc.noaa.gov/products/fire_wx/" target="_blank">SPC Fire Wx</a> &bull;
-      <a href="https://fsapps.nwcg.gov/psp/rest/services/npsg/outlooks_forecast/MapServer" target="_blank">NWCG NPSG</a>
+      <a href="https://wfas.firenet.gov/geoserver/web/" target="_blank">WFAS GeoServer</a>
     </div>
   </div>
 
@@ -447,7 +479,7 @@
 <footer>
   Data: <a href="https://api.weather.gov" target="_blank">NWS API</a> &bull;
   <a href="https://www.spc.noaa.gov/products/fire_wx/" target="_blank">NOAA SPC</a> &bull;
-  <a href="https://fsapps.nwcg.gov/psp/rest/services/npsg/outlooks_forecast/MapServer" target="_blank">NWCG NPSG</a>
+  <a href="https://wfas.firenet.gov/geoserver/web/" target="_blank">WFAS GeoServer</a>
   <span class="disclaimer">For situational awareness only. Always consult official sources and local authorities for emergency decisions.</span>
 </footer>
 
@@ -472,7 +504,7 @@
 <script>
 // ── Constants ─────────────────────────────────────────────────────────────
 const NWS_URL    = 'https://api.weather.gov/alerts/active?event=Red%20Flag%20Warning%2CFire%20Weather%20Watch&status=actual';
-const NWCG_URL   = 'https://fsapps.nwcg.gov/psp/rest/services/npsg/outlooks_forecast/MapServer';
+
 const REFRESH_MS = 5 * 60 * 1000;
 
 // ── Layer state ───────────────────────────────────────────────────────────
@@ -480,21 +512,30 @@ const layerVisible  = {};
 const leafletLayers = {};
 
 const LAYER_META = {
-  rfw:    { dotColor: '#cc2200', defaultOn: true  },
-  fww:    { dotColor: '#ff8c00', defaultOn: true  },
-  precip: { dotColor: '#4499ff', defaultOn: false },
-  wx:     { dotColor: '#88ccff', defaultOn: false },
-  minrh:  { dotColor: '#22cc77', defaultOn: false },
-  maxrh:  { dotColor: '#00ffaa', defaultOn: false },
-  hitemp: { dotColor: '#ff4400', defaultOn: false },
-  lotemp: { dotColor: '#2277dd', defaultOn: false },
-  nwcg0:  { dotColor: '#ffaa00', defaultOn: true  },
-  nwcg1:  { dotColor: '#ffbb22', defaultOn: false },
-  nwcg2:  { dotColor: '#ffbb22', defaultOn: false },
-  nwcg3:  { dotColor: '#ffbb22', defaultOn: false },
-  nwcg4:  { dotColor: '#ffbb22', defaultOn: false },
-  nwcg5:  { dotColor: '#ffbb22', defaultOn: false },
-  nwcg6:  { dotColor: '#ffbb22', defaultOn: false },
+  // NWS Alerts
+  rfw:          { dotColor: '#cc2200', defaultOn: true,  label: 'Red Flag Warning' },
+  fww:          { dotColor: '#ff8c00', defaultOn: true,  label: 'Fire Weather Watch' },
+  // GFS / WPC Weather
+  gfs_temp:     { dotColor: '#ff6633', defaultOn: false, label: 'GFS Temperature' },
+  gfs_rh:       { dotColor: '#33cc88', defaultOn: false, label: 'GFS Relative Humidity' },
+  gfs_precip:   { dotColor: '#4499ff', defaultOn: false, label: 'GFS Total Precip' },
+  wpc_06hr:     { dotColor: '#2288dd', defaultOn: false, label: 'WPC 06hr Precip' },
+  wpc_24hr:     { dotColor: '#1166bb', defaultOn: false, label: 'WPC 24hr Precip' },
+  gfs_wdir:     { dotColor: '#ffee44', defaultOn: false, label: 'GFS Wind Direction' },
+  gfs_wspd:     { dotColor: '#ffcc22', defaultOn: false, label: 'GFS Wind Speed' },
+  // GFS Fire Indices
+  gfs_bi:       { dotColor: '#ff4400', defaultOn: false, label: 'GFS BI Percentile' },
+  gfs_erc:      { dotColor: '#ff6600', defaultOn: false, label: 'GFS ERC Percentile' },
+  gfs_sfdi:     { dotColor: '#ff0055', defaultOn: false, label: 'GFS SFDI Percentile' },
+  // WFAS Fire Danger
+  wfas_bi:      { dotColor: '#cc2200', defaultOn: false, label: 'WFAS BI Percentile 7Band' },
+  wfas_erc:     { dotColor: '#dd4400', defaultOn: false, label: 'WFAS ERC Percentile 7Band' },
+  wfas_fm1000:  { dotColor: '#669944', defaultOn: false, label: 'WFAS 1000-hr Fuel Moisture' },
+  wfas_sfdi:    { dotColor: '#880000', defaultOn: false, label: 'WFAS Severe Fire Danger' },
+  // WFAS Environment
+  wfas_usdm:    { dotColor: '#996633', defaultOn: false, label: 'USDM Drought' },
+  wfas_ndvi:    { dotColor: '#44bb22', defaultOn: false, label: 'Current NDVI' },
+  wfas_dispatch:{ dotColor: '#88aacc', defaultOn: false, label: 'Dispatch Boundaries' },
 };
 
 // ── Map init ──────────────────────────────────────────────────────────────
@@ -522,107 +563,57 @@ document.head.appendChild(ttStyle);
 leafletLayers.rfw = L.layerGroup();
 leafletLayers.fww = L.layerGroup();
 
-// ── NWCG layers (esri-leaflet dynamic map) ────────────────────────────────
-for (let i = 0; i < 7; i++) {
-  leafletLayers['nwcg' + i] = L.esri.dynamicMapLayer({
-    url: NWCG_URL,
-    layers: [i],
-    opacity: 0.80,
-    transparent: true,
-  });
+// ── WFAS GeoServer WMS layers ─────────────────────────────────────────────
+const WFAS_WMS  = 'https://wfas.firenet.gov/geoserver/wms';
+const WFAS_OPTS = { format: 'image/png', transparent: true, opacity: 0.80,
+                    version: '1.1.1', attribution: 'WFAS/USFS' };
+const WFAS_LAYER_NAMES = {
+  gfs_temp:     'gfs:Temperature',
+  gfs_rh:       'gfs:Relative_humidity',
+  gfs_precip:   'gfs:Total_precipitation',
+  wpc_06hr:     'wpc:06 hr Total precipitation',
+  wpc_24hr:     'wpc:24 hr Total precipitation',
+  gfs_wdir:     'gfs:Wind_direction',
+  gfs_wspd:     'gfs:Wind_speed',
+  gfs_bi:       'gfs:BI_Percentile',
+  gfs_erc:      'gfs:ERC_Percentile',
+  gfs_sfdi:     'gfs:SFDI_Percentile',
+  wfas_bi:      'wfas:BI_Percentile_7Band',
+  wfas_erc:     'wfas:ERC_Percentile_7Band',
+  wfas_fm1000:  'wfas:1000-hour Fuel Moisture',
+  wfas_sfdi:    'wfas:Severe_Fire_Danger_Index',
+  wfas_usdm:    'wfas:USDM',
+  wfas_ndvi:    'wfas:current_ndvi',
+  wfas_dispatch:'wfas:National_Dispatch_Boundaries',
+};
+for (const [key, layerName] of Object.entries(WFAS_LAYER_NAMES)) {
+  leafletLayers[key] = L.tileLayer.wms(WFAS_WMS, { ...WFAS_OPTS, layers: layerName });
 }
 
-// ── NWS NDFD forecast layers (image overlays over CONUS) ──────────────────
-// NWS publishes regularly-updated CONUS forecast maps as PNGs at known URLs.
-// L.imageOverlay uses <img> so no CORS restriction. Note: NWS images use
-// Lambert Conformal Conic projection; slight distortion vs Web Mercator is
-// acceptable for situational awareness at continental scale.
-const CONUS_BOUNDS = [[20.0, -126.0], [50.0, -61.0]];
-const NDFD_URLS = {
-  precip: 'https://graphical.weather.gov/images/conus/Pop121_conus.png',
-  wx:     'https://graphical.weather.gov/images/conus/Wx1_conus.png',
-  minrh:  'https://graphical.weather.gov/images/conus/MinRh1_conus.png',
-  maxrh:  'https://graphical.weather.gov/images/conus/MaxRh1_conus.png',
-  hitemp: 'https://graphical.weather.gov/images/conus/MaxT1_conus.png',
-  lotemp: 'https://graphical.weather.gov/images/conus/MinT1_conus.png',
+// ── Legend ────────────────────────────────────────────────────────────────
+// Driven directly by LAYER_META — no separate lookup tables needed.
+// NWS alert layers get a translucent fill swatch; all others use a solid dot.
+const NWS_ALERT_COLORS = {
+  rfw: { color: 'rgba(204,34,0,0.45)',  border: '#cc2200' },
+  fww: { color: 'rgba(255,140,0,0.40)', border: '#ff8c00' },
 };
-for (const [key, url] of Object.entries(NDFD_URLS)) {
-  leafletLayers[key] = L.imageOverlay(url, CONUS_BOUNDS, { opacity: 0.80 });
-}
-
-// ── Dynamic legend (must be defined before updateLegend is called) ─────────
-const LEGEND_ENTRIES = {
-  nws: [
-    { color: 'rgba(204,34,0,0.45)',  border: '#cc2200', label: 'Red Flag Warning' },
-    { color: 'rgba(255,140,0,0.40)', border: '#ff8c00', label: 'Fire Weather Watch' },
-  ],
-  ndfd: [
-    { color: '#4499ff', border: '#4499ff', label: 'Precip %' },
-    { color: '#88ccff', border: '#88ccff', label: 'Precip Type' },
-    { color: '#22cc77', border: '#22cc77', label: 'Min RH' },
-    { color: '#00ffaa', border: '#00ffaa', label: 'Max RH' },
-    { color: '#ff4400', border: '#ff4400', label: 'High Temp' },
-    { color: '#2277dd', border: '#2277dd', label: 'Low Temp' },
-  ],
-};
-const NDFD_LEGEND_MAP = { precip: 0, wx: 1, minrh: 2, maxrh: 3, hitemp: 4, lotemp: 5 };
-
-// NWCG legend — fetched dynamically from the service
-let nwcgLegendItems = [];
-(async function fetchNWCGLegend() {
-  try {
-    const resp = await fetch(NWCG_URL + '/legend?f=json');
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-    const layer0 = (data.layers || []).find(l => l.layerId === 0) || (data.layers || [])[0];
-    if (!layer0?.legend) throw new Error('no legend data');
-    const seen = new Set();
-    nwcgLegendItems = layer0.legend
-      .filter(item => {
-        const lbl = (item.label || '').trim();
-        // Skip empty, numeric-only, <Null>, and <all other values>
-        if (!lbl || lbl === '<all other values>' || lbl === '<Null>' || /^\d+$/.test(lbl)) return false;
-        if (seen.has(lbl.toLowerCase())) return false;
-        seen.add(lbl.toLowerCase());
-        return true;
-      })
-      .map(item => ({
-        imgSrc: `data:${item.contentType};base64,${item.imageData}`,
-        label: item.label.trim(),
-      }));
-    console.log('NWCG legend categories:', nwcgLegendItems.map(i => i.label).join(', '));
-    updateLegend();
-  } catch(e) { console.warn('NWCG legend fetch failed:', e.message); }
-})();
 
 function updateLegend() {
   const bar   = document.getElementById('legend-bar');
-  const items = [];
+  const items = Object.keys(LAYER_META)
+    .filter(k => layerVisible[k])
+    .map(k => {
+      const meta = LAYER_META[k];
+      const c    = NWS_ALERT_COLORS[k];
+      const swatch = c
+        ? `<div class="legend-swatch" style="background:${c.color};border-color:${c.border}"></div>`
+        : `<div class="legend-swatch" style="background:${meta.dotColor};border-color:${meta.dotColor};opacity:0.85"></div>`;
+      return `<div class="legend-item">${swatch}<span style="color:var(--muted)">${meta.label}</span></div>`;
+    });
 
-  if (layerVisible.rfw) items.push(LEGEND_ENTRIES.nws[0]);
-  if (layerVisible.fww) items.push(LEGEND_ENTRIES.nws[1]);
-  Object.keys(NDFD_LEGEND_MAP).forEach(k => {
-    if (layerVisible[k]) items.push(LEGEND_ENTRIES.ndfd[NDFD_LEGEND_MAP[k]]);
-  });
-  const anyNWCG = Object.keys(LAYER_META).filter(k => k.startsWith('nwcg')).some(k => layerVisible[k]);
-  if (anyNWCG) nwcgLegendItems.forEach(e => items.push(e));
-
-  if (!items.length) {
-    bar.innerHTML = '<span style="color:var(--muted)">No layers selected</span>';
-    return;
-  }
-
-  bar.innerHTML = '<span style="color:var(--muted);flex-shrink:0">Legend:</span>' +
-    items.map(e => e.imgSrc
-      ? `<div class="legend-item">
-           <img src="${e.imgSrc}" style="width:16px;height:9px;border-radius:2px;flex-shrink:0;" alt="">
-           <span style="color:var(--muted)">${e.label}</span>
-         </div>`
-      : `<div class="legend-item">
-           <div class="legend-swatch" style="background:${e.color};border-color:${e.border}"></div>
-           <span style="color:var(--muted)">${e.label}</span>
-         </div>`
-    ).join('');
+  bar.innerHTML = items.length
+    ? '<span style="color:var(--muted);flex-shrink:0">Legend:</span>' + items.join('')
+    : '<span style="color:var(--muted)">No layers selected</span>';
 }
 
 // ── Toggle helpers ────────────────────────────────────────────────────────
