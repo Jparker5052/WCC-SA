@@ -318,6 +318,121 @@
     footer a { color: var(--fire); text-decoration: none; }
     footer a:hover { text-decoration: underline; }
     footer .disclaimer { display: inline; margin-left: 8px; color: rgba(139,148,158,.5); }
+
+    /* ── Preparedness level bar ─────────────────────────────── */
+    .pl-bar {
+      display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+    }
+    .pl-btn {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,107,53,.45);
+      background: rgba(255,107,53,.08);
+      color: var(--fire);
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all .15s;
+      letter-spacing: .02em;
+    }
+    .pl-btn:hover { background: rgba(255,107,53,.22); border-color: var(--fire); color: #fff; }
+
+    /* ── Clocks ─────────────────────────────────────────────── */
+    .clock-badge {
+      background: rgba(255,107,53,.08);
+      border: 1px solid rgba(255,107,53,.3);
+      border-radius: 12px;
+      padding: 2px 9px;
+      font-size: 0.65rem;
+      font-family: 'Courier New', monospace;
+      color: #adbac7;
+      white-space: nowrap;
+    }
+
+    /* ── Basemap active state ───────────────────────────────── */
+    .toggle-btn.bm-active {
+      border-color: var(--fire);
+      color: var(--text);
+      background: rgba(255,107,53,.15);
+    }
+
+    /* ── SA Tree (right panel) ──────────────────────────────── */
+    .sa-panel-head {
+      background: var(--bg-alt);
+      border-bottom: 1px solid var(--border);
+      padding: 7px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .sa-panel-head h2 { font-size: 0.82rem; font-weight: 600; }
+    .sa-close-all {
+      background: none; border: 1px solid var(--border);
+      border-radius: 5px; color: var(--muted);
+      font-size: 0.65rem; padding: 2px 8px; cursor: pointer;
+      transition: all .15s;
+    }
+    .sa-close-all:hover { color: var(--text); border-color: #555; }
+
+    .sa-tree { overflow-y: auto; flex: 1; }
+    .sa-tree::-webkit-scrollbar { width: 4px; }
+    .sa-tree::-webkit-scrollbar-track { background: var(--bg-card); }
+    .sa-tree::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .sa-node { border-bottom: 1px solid rgba(48,54,61,.5); }
+    .sa-node:last-child { border-bottom: none; }
+
+    .sa-label {
+      display: flex; align-items: center; gap: 5px;
+      padding: 6px 12px;
+      padding-left: calc(12px + var(--indent, 0px));
+      cursor: pointer; font-size: 0.75rem;
+      transition: background .12s;
+      line-height: 1.3;
+    }
+    .sa-label:hover { background: rgba(255,255,255,.04); }
+
+    .sa-arrow {
+      font-size: 0.55rem; color: var(--muted);
+      transition: transform .2s; flex-shrink: 0;
+      display: inline-block;
+    }
+    .sa-node.open > .sa-label .sa-arrow { transform: rotate(90deg); }
+
+    .sa-children { display: none; }
+    .sa-node.open > .sa-children { display: block; }
+
+    .sa-leaf > .sa-label { color: var(--muted); }
+    .sa-leaf > .sa-label:hover { color: var(--text); }
+
+    .sa-type-icon { font-size: 0.6rem; opacity: .55; flex-shrink: 0; }
+
+    .sa-content {
+      padding: 8px 12px;
+      background: rgba(0,0,0,.2);
+      border-top: 1px solid var(--border);
+    }
+    .sa-content img { width: 100%; display: block; border-radius: 3px; margin-bottom: 4px; cursor: pointer; }
+    .sa-content img:last-child { margin-bottom: 0; }
+    .sa-content iframe { border: none; border-radius: 3px; }
+
+    .sa-pdf-link {
+      display: inline-block; margin-bottom: 6px;
+      color: var(--fire); font-size: 0.72rem; text-decoration: none;
+    }
+    .sa-pdf-link:hover { text-decoration: underline; }
+
+    /* HDWI controls */
+    .hdwi-controls { margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .hdwi-pill {
+      padding: 2px 9px; border-radius: 12px; font-size: 0.67rem; cursor: pointer;
+      border: 1px solid var(--border); background: transparent; color: var(--muted);
+      transition: all .15s;
+    }
+    .hdwi-pill.active, .hdwi-pill:hover { border-color: var(--fire); color: var(--text); background: rgba(255,107,53,.15); }
+    .hdwi-slider-wrap { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 4px; font-size: 0.68rem; color: var(--muted); }
+    .hdwi-slider-wrap input[type=range] { flex: 1; }
   </style>
 </head>
 <body>
@@ -330,8 +445,15 @@
       <span>NWS &bull; SPC &bull; WFAS &mdash; Auto-refreshes every 5 minutes</span>
     </h1>
   </div>
+  <div class="pl-bar">
+    <a class="pl-btn" href="https://www.nifc.gov/nicc/intelligence/preparedness/preparedness_levels.htm" target="_blank">National (NIFC)</a>
+    <a class="pl-btn" href="https://gacc.nifc.gov/swcc/predictive/intelligence/" target="_blank">SWCC (NM)</a>
+    <a class="pl-btn" href="https://ticc.tamu.edu/" target="_blank">TICC (TX)</a>
+    <a class="pl-btn" href="https://gacc.nifc.gov/rmcc/predictive/" target="_blank">RMCC (CO)</a>
+  </div>
   <div class="header-right">
-    <span class="data-sources">Sources: NWS API &bull; NOAA SPC &bull; WFAS GeoServer</span>
+    <span class="clock-badge" id="clock-mst">MST --:--:--</span>
+    <span class="clock-badge" id="clock-cst">CST --:--:--</span>
     <span class="timestamp-badge">Updated: <span id="ts">Loading&hellip;</span></span>
     <button class="refresh-btn" onclick="refreshAll()">&#8635; Refresh</button>
   </div>
@@ -349,6 +471,15 @@
     <div class="layer-panel" id="layer-panel">
 
       <div class="layer-group">
+        <span class="layer-group-label">Basemap</span>
+        <button class="toggle-btn" id="bm-dark"      onclick="setBasemap('dark')">Dark</button>
+        <button class="toggle-btn" id="bm-light"     onclick="setBasemap('light')">Light</button>
+        <button class="toggle-btn" id="bm-satellite" onclick="setBasemap('satellite')">Satellite</button>
+        <button class="toggle-btn" id="bm-topo"      onclick="setBasemap('topo')">Topo</button>
+        <button class="toggle-btn" id="bm-streets"   onclick="setBasemap('streets')">Streets</button>
+      </div>
+
+      <div class="layer-group">
         <span class="layer-group-label">NWS Alerts</span>
         <button class="toggle-btn" id="tog-rfw" onclick="toggleLayer('rfw')">
           <span class="toggle-dot" style="background:#cc2200"></span>Red Flag Warning
@@ -359,7 +490,7 @@
       </div>
 
       <div class="layer-group">
-        <span class="layer-group-label">WFAS Fire Conditions</span>
+        <span class="layer-group-label">Fire Conditions</span>
         <button class="toggle-btn" id="tog-wfas_bi" onclick="toggleLayer('wfas_bi')"
           title="Burning Index percentile vs. historical record &mdash; today's observed conditions from WIMS fire weather stations">
           <span class="toggle-dot" style="background:#cc2200"></span>BI Percentile<span class="status-badge">Now</span>
@@ -380,10 +511,37 @@
           title="US Drought Monitor &mdash; current drought classification from NOAA/NIDIS/USDA, updated weekly every Thursday">
           <span class="toggle-dot" style="background:#996633"></span>USDM Drought<span class="status-badge">Now</span>
         </button>
-        <button class="toggle-btn" id="tog-wfas_dispatch" onclick="toggleLayer('wfas_dispatch')"
-          title="NIFC National Wildland Fire Dispatch administrative boundary regions &mdash; static reference layer">
+        <button class="toggle-btn" id="tog-spc_fire" onclick="toggleLayer('spc_fire')"
+          title="SPC Fire Weather Outlook &mdash; areas of elevated and critical fire weather conditions">
+          <span class="toggle-dot" style="background:#ff4422"></span>Fire Wx Outlook<span class="status-badge">Fcst</span>
+        </button>
+        <button class="toggle-btn" id="tog-cpc_6_10" onclick="toggleLayer('cpc_6_10')"
+          title="CPC 6-10 Day Temperature &amp; Precipitation Outlook">
+          <span class="toggle-dot" style="background:#aa66ff"></span>6-10 Day Outlook<span class="status-badge">Fcst</span>
+        </button>
+        <button class="toggle-btn" id="tog-cpc_8_14" onclick="toggleLayer('cpc_8_14')"
+          title="CPC 8-14 Day Temperature &amp; Precipitation Outlook">
+          <span class="toggle-dot" style="background:#8844ff"></span>8-14 Day Outlook<span class="status-badge">Fcst</span>
+        </button>
+        <button class="toggle-btn" id="tog-dispatch" onclick="toggleLayer('dispatch')"
+          title="National Wildland Fire Dispatch administrative boundary regions">
           <span class="toggle-dot" style="background:#88aacc"></span>Dispatch Boundaries<span class="status-badge ref">Ref</span>
         </button>
+      </div>
+
+      <div class="layer-group">
+        <span class="layer-group-label">Weather</span>
+        <button class="toggle-btn" id="tog-wx_wspd"  onclick="toggleLayer('wx_wspd')"  title="NDFD Wind Speed forecast"><span class="toggle-dot" style="background:#88ddff"></span>Wind Speed</button>
+        <button class="toggle-btn" id="tog-wx_wgust" onclick="toggleLayer('wx_wgust')" title="NDFD Wind Gust forecast"><span class="toggle-dot" style="background:#66bbff"></span>Wind Gust</button>
+        <button class="toggle-btn" id="tog-wx_wdir"  onclick="toggleLayer('wx_wdir')"  title="NDFD Wind Direction forecast"><span class="toggle-dot" style="background:#44aaff"></span>Wind Direction</button>
+        <button class="toggle-btn" id="tog-wx_qpf"   onclick="toggleLayer('wx_qpf')"   title="NDFD Quantitative Precipitation forecast"><span class="toggle-dot" style="background:#4488ff"></span>Precip Amount</button>
+        <button class="toggle-btn" id="tog-wx_pop12" onclick="toggleLayer('wx_pop12')" title="NDFD 12-hour Probability of Precipitation"><span class="toggle-dot" style="background:#2266ff"></span>12-hr PoP</button>
+        <button class="toggle-btn" id="tog-wx_rhm"   onclick="toggleLayer('wx_rhm')"   title="NDFD Relative Humidity forecast"><span class="toggle-dot" style="background:#33cc88"></span>Rel. Humidity</button>
+        <button class="toggle-btn" id="tog-wx_temp"  onclick="toggleLayer('wx_temp')"  title="NDFD Temperature forecast"><span class="toggle-dot" style="background:#ff9900"></span>Temperature</button>
+        <button class="toggle-btn" id="tog-wx_mint"  onclick="toggleLayer('wx_mint')"  title="NDFD Minimum Temperature forecast"><span class="toggle-dot" style="background:#2299ff"></span>Min Temp</button>
+        <button class="toggle-btn" id="tog-wx_maxt"  onclick="toggleLayer('wx_maxt')"  title="NDFD Maximum Temperature forecast"><span class="toggle-dot" style="background:#ff5500"></span>Max Temp</button>
+        <button class="toggle-btn" id="tog-wx_td"    onclick="toggleLayer('wx_td')"    title="NDFD Dew Point forecast"><span class="toggle-dot" style="background:#44ddaa"></span>Dew Point</button>
+        <button class="toggle-btn" id="tog-wx_natl_fcst" onclick="toggleLayer('wx_natl_fcst')" title="NWS National Forecast Weather Chart"><span class="toggle-dot" style="background:#6688cc"></span>Natl Fcst Chart</button>
       </div>
 
     </div>
@@ -399,41 +557,12 @@
   </div>
 
   <!-- ── Right Panel ──────────────────────────────────────── -->
-  <div class="card" style="overflow-y: auto;">
-
-    <div class="accord-bar" onclick="toggleAccord('accord-spc1',this)">
-      <span class="accord-title">&#x1F525; SPC Fire Wx Outlook &mdash; Day 1</span>
-      <span class="accord-chevron">&#9654;</span>
+  <div class="card" style="display:flex;flex-direction:column;min-height:0;">
+    <div class="sa-panel-head">
+      <h2>&#x1F4CB; Other Situational Awareness Products</h2>
+      <button class="sa-close-all" onclick="closeAllSA()">Close All</button>
     </div>
-    <div class="accord-body" id="accord-spc1">
-      <img class="accord-img" src="https://www.spc.noaa.gov/products/fire_wx/day1otlk_fire.png" alt="SPC Day 1 Fire Weather Outlook">
-    </div>
-
-    <div class="accord-bar" onclick="toggleAccord('accord-spc2',this)">
-      <span class="accord-title">&#x1F525; SPC Fire Wx Outlook &mdash; Day 2</span>
-      <span class="accord-chevron">&#9654;</span>
-    </div>
-    <div class="accord-body" id="accord-spc2">
-      <img class="accord-img" src="https://www.spc.noaa.gov/products/fire_wx/day2otlk_fire.png" alt="SPC Day 2 Fire Weather Outlook">
-    </div>
-
-    <div class="accord-bar" onclick="toggleAccord('accord-fuels',this)">
-      <span class="accord-title">&#x1F525; 10 Hour Fuels</span>
-      <span class="accord-chevron">&#9654;</span>
-    </div>
-    <div class="accord-body" id="accord-fuels">
-      <img class="accord-img" src="https://www.wfas.net/images/firedanger/fm_10.png" alt="WFAS 10-hr Fuel Moisture Map">
-    </div>
-
-    <div class="accord-bar" onclick="toggleAccord('accord-kbdi',this)">
-      <span class="accord-title">&#x1F4A7; KBDI &mdash; Drought</span>
-      <span class="accord-chevron">&#9654;</span>
-    </div>
-    <div class="accord-body" id="accord-kbdi">
-      <img class="accord-img" src="https://www.wfas.net/images/firedanger/kbdi.png" alt="WFAS Keetch-Byram Drought Index Map">
-    </div>
-
-
+    <div class="sa-tree" id="sa-tree"></div>
   </div>
 
 </main>
@@ -475,24 +604,55 @@ const leafletLayers = {};
 
 const LAYER_META = {
   // NWS Alerts — current conditions, no WMS legend (GeoJSON polygons)
-  rfw:          { dotColor: '#cc2200', defaultOn: true,  label: 'Red Flag Warning',         wmsLayer: null },
-  fww:          { dotColor: '#ff8c00', defaultOn: true,  label: 'Fire Weather Watch',        wmsLayer: null },
+  rfw:           { dotColor: '#cc2200', defaultOn: true,  label: 'Red Flag Warning',         wmsLayer: null,  legendType: 'dot' },
+  fww:           { dotColor: '#ff8c00', defaultOn: true,  label: 'Fire Weather Watch',        wmsLayer: null,  legendType: 'dot' },
   // WFAS Fire Conditions — all current observed conditions from WIMS stations
-  wfas_bi:      { dotColor: '#cc2200', defaultOn: false, label: 'BI Percentile',             wmsLayer: 'wfas:BI_Percentile_7Band' },
-  wfas_erc:     { dotColor: '#dd4400', defaultOn: false, label: 'ERC Percentile',            wmsLayer: 'wfas:ERC_Percentile_7Band' },
-  wfas_fm1000:  { dotColor: '#669944', defaultOn: false, label: '1000-hr Fuel Moisture',     wmsLayer: 'wfas:1000-hour Fuel Moisture' },
-  wfas_sfdi:    { dotColor: '#880000', defaultOn: false, label: 'Severe Fire Danger',        wmsLayer: 'wfas:Severe_Fire_Danger_Index' },
-  wfas_usdm:    { dotColor: '#996633', defaultOn: false, label: 'USDM Drought',              wmsLayer: 'wfas:USDM' },
-  wfas_dispatch:{ dotColor: '#88aacc', defaultOn: false, label: 'Dispatch Boundaries',       wmsLayer: 'wfas:National_Dispatch_Boundaries' },
+  wfas_bi:       { dotColor: '#cc2200', defaultOn: false, label: 'BI Percentile',             wmsLayer: 'wfas:BI_Percentile_7Band',        legendType: 'wms' },
+  wfas_erc:      { dotColor: '#dd4400', defaultOn: false, label: 'ERC Percentile',            wmsLayer: 'wfas:ERC_Percentile_7Band',        legendType: 'wms' },
+  wfas_fm1000:   { dotColor: '#669944', defaultOn: false, label: '1000-hr Fuel Moisture',     wmsLayer: 'wfas:1000-hour Fuel Moisture',     legendType: 'wms' },
+  wfas_sfdi:     { dotColor: '#880000', defaultOn: false, label: 'Severe Fire Danger',        wmsLayer: 'wfas:Severe_Fire_Danger_Index',    legendType: 'wms' },
+  wfas_usdm:     { dotColor: '#996633', defaultOn: false, label: 'USDM Drought',              wmsLayer: 'wfas:USDM',                        legendType: 'wms' },
+  // New Fire Conditions — SPC/CPC outlooks + dispatch boundaries
+  spc_fire:      { dotColor: '#ff4422', defaultOn: false, label: 'Fire Wx Outlook',           wmsLayer: null,  legendType: 'esri', esriUrl: 'https://mapservices.weather.noaa.gov/vector/rest/services/fire_weather/SPC_firewx/MapServer' },
+  cpc_6_10:      { dotColor: '#aa66ff', defaultOn: false, label: '6-10 Day Outlook',          wmsLayer: null,  legendType: 'esri', esriUrl: 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/cpc_6_10_day_outlk/MapServer' },
+  cpc_8_14:      { dotColor: '#8844ff', defaultOn: false, label: '8-14 Day Outlook',          wmsLayer: null,  legendType: 'esri', esriUrl: 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/cpc_8_14_day_outlk/MapServer' },
+  dispatch:      { dotColor: '#88aacc', defaultOn: false, label: 'Dispatch Boundaries',       wmsLayer: null,  legendType: 'dot' },
+  // Weather — NDFD WMS layers
+  wx_wspd:       { dotColor: '#88ddff', defaultOn: false, label: 'Wind Speed',                wmsLayer: null,  legendType: 'ndfd', ndfdProd: 'wspd' },
+  wx_wgust:      { dotColor: '#66bbff', defaultOn: false, label: 'Wind Gust',                 wmsLayer: null,  legendType: 'ndfd', ndfdProd: 'wgust' },
+  wx_wdir:       { dotColor: '#44aaff', defaultOn: false, label: 'Wind Direction',             wmsLayer: null,  legendType: 'ndfd', ndfdProd: 'wdir' },
+  wx_qpf:        { dotColor: '#4488ff', defaultOn: false, label: 'Precip Amount',              wmsLayer: null,  legendType: 'ndfd', ndfdProd: 'qpf' },
+  wx_pop12:      { dotColor: '#2266ff', defaultOn: false, label: '12-hr PoP',                  wmsLayer: null,  legendType: 'ndfd', ndfdProd: 'pop12' },
+  wx_rhm:        { dotColor: '#33cc88', defaultOn: false, label: 'Rel. Humidity',              wmsLayer: null,  legendType: 'ndfd', ndfdProd: 'rhm' },
+  wx_temp:       { dotColor: '#ff9900', defaultOn: false, label: 'Temperature',                wmsLayer: null,  legendType: 'ndfd', ndfdProd: 'temp' },
+  wx_mint:       { dotColor: '#2299ff', defaultOn: false, label: 'Min Temperature',            wmsLayer: null,  legendType: 'ndfd', ndfdProd: 'mint' },
+  wx_maxt:       { dotColor: '#ff5500', defaultOn: false, label: 'Max Temperature',            wmsLayer: null,  legendType: 'ndfd', ndfdProd: 'maxt' },
+  wx_td:         { dotColor: '#44ddaa', defaultOn: false, label: 'Dew Point',                  wmsLayer: null,  legendType: 'ndfd', ndfdProd: 'td' },
+  wx_natl_fcst:  { dotColor: '#6688cc', defaultOn: false, label: 'Natl Fcst Chart',            wmsLayer: null,  legendType: 'esri', esriUrl: 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/natl_fcst_wx_chart/MapServer' },
 };
 
 // ── Map init ──────────────────────────────────────────────────────────────
 const map = L.map('map', { center: [39.5, -98.35], zoom: 4 });
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-  subdomains: 'abcd', maxZoom: 19
-}).addTo(map);
+// ── Basemap toggle ────────────────────────────────────────────────────────
+const BASEMAPS = {
+  dark:      { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',   sub: 'abcd', attr: '&copy; OpenStreetMap &copy; CARTO' },
+  light:     { url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',  sub: 'abcd', attr: '&copy; OpenStreetMap &copy; CARTO' },
+  satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', sub: '', attr: '&copy; Esri' },
+  topo:      { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',                sub: 'abc',  attr: '&copy; OpenStreetMap, SRTM' },
+  streets:   { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',              sub: 'abc',  attr: '&copy; OpenStreetMap' },
+};
+let activeBasemap = null;
+function setBasemap(key) {
+  if (activeBasemap) map.removeLayer(activeBasemap);
+  const b = BASEMAPS[key];
+  activeBasemap = L.tileLayer(b.url, { subdomains: b.sub || 'abcd', attribution: b.attr, maxZoom: 19 });
+  activeBasemap.addTo(map);
+  activeBasemap.bringToBack();
+  document.querySelectorAll('[id^="bm-"]').forEach(btn =>
+    btn.classList.toggle('bm-active', btn.id === 'bm-' + key));
+}
+setBasemap('dark');
 
 requestAnimationFrame(() => map.invalidateSize());
 
@@ -516,15 +676,59 @@ const WFAS_WMS  = 'https://wfas.firenet.gov/geoserver/wms';
 const WFAS_OPTS = { format: 'image/png', transparent: true, opacity: 0.80,
                     version: '1.1.1', attribution: 'WFAS/USFS' };
 const WFAS_LAYER_NAMES = {
-  wfas_bi:      'wfas:BI_Percentile_7Band',
-  wfas_erc:     'wfas:ERC_Percentile_7Band',
-  wfas_fm1000:  'wfas:1000-hour Fuel Moisture',
-  wfas_sfdi:    'wfas:Severe_Fire_Danger_Index',
-  wfas_usdm:    'wfas:USDM',
-  wfas_dispatch:'wfas:National_Dispatch_Boundaries',
+  wfas_bi:     'wfas:BI_Percentile_7Band',
+  wfas_erc:    'wfas:ERC_Percentile_7Band',
+  wfas_fm1000: 'wfas:1000-hour Fuel Moisture',
+  wfas_sfdi:   'wfas:Severe_Fire_Danger_Index',
+  wfas_usdm:   'wfas:USDM',
 };
 for (const [key, layerName] of Object.entries(WFAS_LAYER_NAMES)) {
   leafletLayers[key] = L.tileLayer.wms(WFAS_WMS, { ...WFAS_OPTS, layers: layerName });
+}
+
+// ── Esri dynamicMapLayer — SPC/CPC/natl_fcst ─────────────────────────────
+leafletLayers.spc_fire = L.esri.dynamicMapLayer({
+  url: 'https://mapservices.weather.noaa.gov/vector/rest/services/fire_weather/SPC_firewx/MapServer',
+  opacity: 0.75, transparent: true,
+});
+leafletLayers.cpc_6_10 = L.esri.dynamicMapLayer({
+  url: 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/cpc_6_10_day_outlk/MapServer',
+  opacity: 0.75, transparent: true,
+});
+leafletLayers.cpc_8_14 = L.esri.dynamicMapLayer({
+  url: 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/cpc_8_14_day_outlk/MapServer',
+  opacity: 0.75, transparent: true,
+});
+// natl_fcst_wx_chart — hideLayers TBD (exclude Day 1/2/3 Critical Fire Weather layers; verify IDs in browser DevTools)
+leafletLayers.wx_natl_fcst = L.esri.dynamicMapLayer({
+  url: 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/natl_fcst_wx_chart/MapServer',
+  opacity: 0.75, transparent: true,
+  hideLayers: [], // TODO: add layer IDs for "Day 1/2/3 Critical Fire Weather Possible" once confirmed
+});
+
+// ── National Dispatch Boundaries (FeatureServer) ──────────────────────────
+leafletLayers.dispatch = L.esri.featureLayer({
+  url: 'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/DMP_National_Dispatch_Boundaries_Public/FeatureServer/0',
+  style: () => ({ color: '#88aacc', weight: 1.5, fillOpacity: 0, opacity: 0.8 }),
+});
+
+// ── NDFD WMS layers ───────────────────────────────────────────────────────
+const NDFD_BASE = 'https://mapservices.weather.noaa.gov/geoserver/ndfd';
+const NDFD_OPTS = { format: 'image/png', transparent: true, opacity: 0.80, version: '1.3.0', attribution: 'NWS NDFD' };
+const NDFD_PRODS = {
+  wx_wspd:  'wspd',
+  wx_wgust: 'wgust',
+  wx_wdir:  'wdir',
+  wx_qpf:   'qpf',
+  wx_pop12: 'pop12',
+  wx_rhm:   'rhm',
+  wx_temp:  'temp',
+  wx_mint:  'mint',
+  wx_maxt:  'maxt',
+  wx_td:    'td',
+};
+for (const [key, prod] of Object.entries(NDFD_PRODS)) {
+  leafletLayers[key] = L.tileLayer.wms(`${NDFD_BASE}/${prod}/ows`, { ...NDFD_OPTS, layers: prod });
 }
 
 // ── Floating map legend control ───────────────────────────────────────────
@@ -533,6 +737,12 @@ function legendGraphicUrl(layerName) {
   return `${WFAS_WMS_LEGEND}?REQUEST=GetLegendGraphic&VERSION=1.0.0&FORMAT=image%2Fpng` +
          `&LAYER=${encodeURIComponent(layerName)}` +
          `&LEGEND_OPTIONS=fontAntiAliasing:true;fontSize:10;fontColor:0xadbac7;bgColor:0x1c2128;borderColor:0x30363d`;
+}
+function dotSwatch(color, label) {
+  const d = document.createElement('div');
+  d.className = 'leg-row';
+  d.innerHTML = `<span class="leg-dot" style="background:${color}"></span>${label}`;
+  return d;
 }
 
 const mapLegend = L.control({ position: 'bottomleft' });
@@ -544,19 +754,47 @@ mapLegend.onAdd = function() {
 };
 mapLegend.update = function() {
   const sections = [];
-  // NWS alert layers — simple color swatches
-  const alertRows = [];
-  if (layerVisible.rfw) alertRows.push(`<div class="leg-row"><span class="leg-dot" style="background:rgba(204,34,0,0.7)"></span>Red Flag Warning</div>`);
-  if (layerVisible.fww) alertRows.push(`<div class="leg-row"><span class="leg-dot" style="background:rgba(255,140,0,0.7)"></span>Fire Weather Watch</div>`);
-  if (alertRows.length) sections.push(`<div class="leg-section"><div class="leg-title">NWS Alerts (current)</div>${alertRows.join('')}</div>`);
-  // WFAS layers — WMS GetLegendGraphic images
   Object.keys(LAYER_META).forEach(k => {
-    if (!layerVisible[k] || !LAYER_META[k].wmsLayer) return;
+    if (!layerVisible[k]) return;
     const meta = LAYER_META[k];
-    sections.push(`<div class="leg-section">` +
-      `<div class="leg-title">${meta.label}</div>` +
-      `<img src="${legendGraphicUrl(meta.wmsLayer)}" alt="${meta.label} legend" class="leg-img">` +
-      `</div>`);
+    if (meta.legendType === 'wms' && meta.wmsLayer) {
+      sections.push(`<div class="leg-section">` +
+        `<div class="leg-title">${meta.label}</div>` +
+        `<img src="${legendGraphicUrl(meta.wmsLayer)}" alt="${meta.label} legend" class="leg-img">` +
+        `</div>`);
+    } else if (meta.legendType === 'ndfd' && meta.ndfdProd) {
+      const legUrl = `${NDFD_BASE}/${meta.ndfdProd}/ows?REQUEST=GetLegendGraphic&VERSION=1.0.0&FORMAT=image%2Fpng&LAYER=${meta.ndfdProd}`;
+      sections.push(`<div class="leg-section">` +
+        `<div class="leg-title">${meta.label}</div>` +
+        `<img src="${legUrl}" alt="${meta.label} legend" class="leg-img" onerror="this.replaceWith(dotSwatch('${meta.dotColor}','${meta.label}'))">` +
+        `</div>`);
+    } else if (meta.legendType === 'esri' && meta.esriUrl) {
+      const divId = 'leg-esri-' + k;
+      sections.push(`<div class="leg-section">` +
+        `<div class="leg-title">${meta.label}</div>` +
+        `<div id="${divId}" class="leg-row"><span class="leg-dot" style="background:${meta.dotColor}"></span>${meta.label}</div>` +
+        `</div>`);
+      // Async fetch legend swatches
+      fetch(meta.esriUrl + '/legend?f=json')
+        .then(r => r.json())
+        .then(data => {
+          const el = document.getElementById(divId);
+          if (!el) return;
+          const rows = [];
+          (data.layers || []).forEach(layer => {
+            (layer.legend || []).forEach(item => {
+              if (item.label) rows.push(
+                `<div class="leg-row"><img src="data:${item.contentType};base64,${item.imageData}" style="width:20px;height:14px;margin-right:4px;border-radius:2px">${item.label}</div>`
+              );
+            });
+          });
+          if (rows.length) el.innerHTML = rows.join('');
+        })
+        .catch(() => {}); // silently ignore CORS failures
+    } else {
+      // dot swatch (NWS alerts, dispatch, etc.)
+      sections.push(`<div class="leg-section"><div class="leg-row"><span class="leg-dot" style="background:${meta.dotColor}"></span>${meta.label}</div></div>`);
+    }
   });
   if (!sections.length) { this._div.style.display = 'none'; return; }
   this._div.style.display = '';
@@ -764,6 +1002,192 @@ function refreshAll() {
     else if (lyr.redraw) lyr.redraw();       // Leaflet WMS tile layers
   });
 }
+
+// ── Clocks ────────────────────────────────────────────────────────────────
+function updateClocks() {
+  const opts = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+  document.getElementById('clock-mst').textContent =
+    'MST ' + new Date().toLocaleTimeString('en-US', { ...opts, timeZone: 'America/Denver' });
+  document.getElementById('clock-cst').textContent =
+    'CST ' + new Date().toLocaleTimeString('en-US', { ...opts, timeZone: 'America/Chicago' });
+}
+setInterval(updateClocks, 1000);
+updateClocks();
+
+// ── SA Tree ───────────────────────────────────────────────────────────────
+const SA_TREE = [
+  { id:'nat', label:'National Products', children:[
+    { id:'nat-sitrep', label:'NIFC SitRep', url:'https://www.nifc.gov/nicc-files/sitreprt.pdf', type:'pdf' },
+    { id:'nat-hdwi',   label:'HDWI', type:'hdwi' },
+    { id:'nat-erc',    label:'ERC Based Fire Danger Class', children:[
+      { id:'nat-erc-obs', label:'Observed', url:'https://www.wfas.net/images/firedanger/fd_class.png', type:'image' },
+      { id:'nat-erc-fcs', label:'Forecast', url:'https://www.wfas.net/images/firedanger/fd_cls_f.png', type:'image' },
+    ]},
+    { id:'nat-fm10',  label:'Observed 10 Hour Fuel Moisture', url:'https://www.wfas.net/images/firedanger/fm_10.png',  type:'image' },
+    { id:'nat-kbdi',  label:'Observed KBDI',                  url:'https://www.wfas.net/images/firedanger/kbdi.png',   type:'image' },
+  ]},
+  { id:'psco', label:'PSCO', children:[
+    { id:'psco-rmcc-morn',  label:'RMCC Morning Report',            url:'https://firenet365.sharepoint.com/sites/rmcc/Shared%20Documents/Morning%20Situation%20Report/Morning%20Situation%20Report.pdf', type:'link' },
+    { id:'psco-dfpc-brief', label:'DFPC Fire Env/Wx Brief (Weekly)',url:'https://drive.google.com/drive/folders/1QXqBFOmUzYOv0PJa4k5R2E3fZsX0hW4A', type:'link' },
+    { id:'psco-rmcc-fuels', label:'RMCC Fuels',                     url:'https://gacc.nifc.gov/rmcc/nfdrs.php', type:'link' },
+    { id:'psco-dfpc-dash',  label:'DFPC Fire Status Dashboard',     url:'https://experience.arcgis.com/experience/2b3f6e4b4b0e4b0e8c3e7e4b4b0e4b0e', type:'link' },
+    { id:'psco-restrictions',label:'County Fire Restrictions', type:'iframe', embedHtml:'<iframe src="https://www.google.com/maps/d/embed?mid=1cEAhNHqp82AXABF8qU7k6sRFI4392V0e&ehbc=2E312F" width="100%" height="400" style="border:none;border-radius:3px"></iframe>' },
+    { id:'psco-rmcc-rx',    label:'RMCC RX Fires',                  url:'https://firenet365.sharepoint.com/sites/rmcc/Shared%20Documents/Rx%20Fire%20Status/Rx%20Fire%20Status.pdf', type:'link' },
+  ]},
+  { id:'sps', label:'SPS', children:[
+    { id:'sps-nm', label:'New Mexico', children:[
+      { id:'sps-nm-swcc',  label:'SWCC Morning Report', url:'https://gacc.nifc.gov/swcc/predictive/intelligence/daily/SWCC_Morning_Situation_Report/SWCC_Morning_Situation_Report.htm', type:'link' },
+      { id:'sps-nm-nfdrs', label:'NFDRS Charts', children:[
+        { id:'sps-nm-erc', label:'Energy Release Component', urls:['https://cales.arizona.edu/climate/SWFireDanger/SW-14N_ERC.png','https://cales.arizona.edu/climate/SWFireDanger/SW-13_ERC.png'], type:'multi' },
+        { id:'sps-nm-bi',  label:'Burning Index',            urls:['https://cales.arizona.edu/climate/SWFireDanger/SW-14N_BI.png', 'https://cales.arizona.edu/climate/SWFireDanger/SW-13_BI.png'],  type:'multi' },
+      ]},
+    ]},
+    { id:'sps-tx', label:'Texas', children:[
+      { id:'sps-tx-potential', label:'Fire Potential Update (Weekly)', url:'https://ticc.tamu.edu/Documents/PredictiveServices/Outlooks/Texas_Fire_Potential_Update.pdf', type:'pdf' },
+      { id:'sps-tx-incidents', label:'Active TX Incidents',            url:'https://tfswildfires.com/public/', type:'link' },
+      { id:'sps-tx-nfdrs',     label:'NFDRS', children:[
+        { id:'sps-tx-fd', label:'Fire Danger', children:[
+          { id:'sps-tx-fd-obs', label:'Observed Fire Danger', url:'https://twc.tamu.edu/tfs/rawsd/rawsd.png',    type:'image' },
+          { id:'sps-tx-fd-fcs', label:'Forecast Fire Danger', url:'https://twc.tamu.edu/tfs/rawsd/rawsfcst.png', type:'image' },
+        ]},
+        { id:'sps-tx-bi', label:'Burning Index', children:[
+          { id:'sps-tx-bi-obs', label:'Observed BI',  url:'https://twc.tamu.edu/tfs/rawsd/biper.png',     type:'image' },
+          { id:'sps-tx-bi-fcs', label:'Forecast BI',  url:'https://twc.tamu.edu/tfs/rawsd/bifcstper.png', type:'image' },
+        ]},
+        { id:'sps-tx-erc', label:'Energy Release Component', children:[
+          { id:'sps-tx-erc-obs', label:'Observed ERC', url:'https://twc.tamu.edu/tfs/rawsd/ercper.png',     type:'image' },
+          { id:'sps-tx-erc-fcs', label:'Forecast ERC', url:'https://twc.tamu.edu/tfs/rawsd/ercfcstper.png', type:'image' },
+        ]},
+        { id:'sps-tx-fm', label:'Fuel Moisture', children:[
+          { id:'sps-tx-fm-obs', label:'Observed', children:[
+            { id:'sps-tx-fm-dry',  label:'Fuel Dryness Observed', url:'https://twc.tamu.edu/tfs/rawsd/dryness.png',  type:'image' },
+            { id:'sps-tx-fm-10',   label:'10 Hour',               url:'https://twc.tamu.edu/tfs/rawsd/tenper.png',   type:'image' },
+            { id:'sps-tx-fm-100',  label:'100 Hour',              url:'https://twc.tamu.edu/tfs/rawsd/hundper.png',  type:'image' },
+            { id:'sps-tx-fm-1000', label:'1000 Hour',             url:'https://twc.tamu.edu/tfs/rawsd/thouper.png',  type:'image' },
+          ]},
+          { id:'sps-tx-fm-fcs', label:'Forecast', children:[
+            { id:'sps-tx-dry-fcs', label:'Fuel Dryness Forecast', url:'https://twc.tamu.edu/tfs/rawsd/dryfcst.png',     type:'image' },
+            { id:'sps-tx-1-fcs',   label:'1 Hour',                url:'https://twc.tamu.edu/tfs/rawsd/onefcst.png',     type:'image' },
+            { id:'sps-tx-10-fcs',  label:'10 Hour',               url:'https://twc.tamu.edu/tfs/rawsd/Tenfcstper.png',  type:'image' },
+            { id:'sps-tx-100-fcs', label:'100 Hour',              url:'https://twc.tamu.edu/tfs/rawsd/hundfcstper.png', type:'image' },
+          ]},
+        ]},
+      ]},
+      { id:'sps-tx-7day', label:'Wildfire Activity - Past 7 Days', url:'https://tfsfrp.tamu.edu/wildfires/7dayfires.png', type:'image' },
+      { id:'sps-tx-bans', label:'Outdoor Burn Bans',               url:'https://tfsfrp.tamu.edu/wildfires/DecBan.png',    type:'image' },
+    ]},
+  ]},
+];
+
+// Build a flat lookup for SA leaf nodes
+const SA_FLAT = {};
+function flattenSA(nodes) {
+  nodes.forEach(n => {
+    SA_FLAT[n.id] = n;
+    if (n.children) flattenSA(n.children);
+  });
+}
+flattenSA(SA_TREE);
+
+// HDWI state
+let hdwiPct = 75, hdwiDay = 0;
+function hdwiUrl() {
+  return `https://hdwindex.fs2c.usda.gov/HDW_GEFSprobs/Day${hdwiDay}Perc${hdwiPct}.png`;
+}
+function updateHDWI() {
+  const img = document.getElementById('hdwi-img');
+  if (img) img.src = hdwiUrl();
+  document.querySelectorAll('.hdwi-pill').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.pct) === hdwiPct);
+  });
+  const lbl = document.getElementById('hdwi-day-lbl');
+  if (lbl) lbl.textContent = hdwiDay === 0 ? 'Day 0 (Today)' : `Day +${hdwiDay}`;
+}
+function buildHDWIContent() {
+  return `<div class="hdwi-controls">
+    <button class="hdwi-pill${hdwiPct===75?' active':''}" data-pct="75" onclick="hdwiPct=75;updateHDWI()">75th</button>
+    <button class="hdwi-pill${hdwiPct===90?' active':''}" data-pct="90" onclick="hdwiPct=90;updateHDWI()">90th</button>
+    <button class="hdwi-pill${hdwiPct===95?' active':''}" data-pct="95" onclick="hdwiPct=95;updateHDWI()">95th</button>
+  </div>
+  <div class="hdwi-slider-wrap">
+    <span>Day 0</span>
+    <input type="range" min="0" max="7" value="${hdwiDay}" oninput="hdwiDay=parseInt(this.value);updateHDWI()">
+    <span>Day 7</span>
+  </div>
+  <div style="font-size:0.65rem;color:var(--muted);margin:4px 0 6px" id="hdwi-day-lbl">${hdwiDay===0?'Day 0 (Today)':'Day +'+hdwiDay}</div>
+  <a href="${hdwiUrl()}" target="_blank"><img id="hdwi-img" src="${hdwiUrl()}" style="width:100%;border-radius:3px"></a>`;
+}
+
+function buildSAContent(node) {
+  if (node.type === 'image')
+    return `<a href="${node.url}" target="_blank"><img src="${node.url}" alt="${node.label}"></a>`;
+  if (node.type === 'pdf')
+    return `<a href="${node.url}" target="_blank" class="sa-pdf-link">Open PDF in new tab &#8599;</a>` +
+           `<iframe src="${node.url}" style="width:100%;height:420px"></iframe>`;
+  if (node.type === 'multi')
+    return node.urls.map(u => `<a href="${u}" target="_blank"><img src="${u}" alt="${node.label}"></a>`).join('');
+  if (node.type === 'iframe')
+    return node.embedHtml;
+  if (node.type === 'hdwi')
+    return buildHDWIContent();
+  return '';
+}
+
+function leafIcon(node) {
+  if (node.type === 'link')   return '<span class="sa-type-icon">&#x1F517;</span>';
+  if (node.type === 'pdf')    return '<span class="sa-type-icon">&#x1F4C4;</span>';
+  if (node.type === 'image' || node.type === 'multi') return '<span class="sa-type-icon">&#x1F5BC;</span>';
+  if (node.type === 'iframe') return '<span class="sa-type-icon">&#x1F4CC;</span>';
+  if (node.type === 'hdwi')   return '<span class="sa-type-icon">&#x1F321;</span>';
+  return '';
+}
+
+function renderSATree(nodes, depth) {
+  depth = depth || 0;
+  const indent = depth * 14;
+  return nodes.map(node => {
+    if (node.children && node.children.length) {
+      return `<div class="sa-node sa-parent" data-id="${node.id}">` +
+        `<div class="sa-label" style="padding-left:calc(12px + ${indent}px)" onclick="toggleSANode('${node.id}')">` +
+        `<span class="sa-arrow">&#9654;</span>${node.label}</div>` +
+        `<div class="sa-children" id="sa-ch-${node.id}">${renderSATree(node.children, depth + 1)}</div>` +
+        `</div>`;
+    }
+    return `<div class="sa-node sa-leaf" data-id="${node.id}">` +
+      `<div class="sa-label" style="padding-left:calc(12px + ${indent}px)" onclick="handleSALeaf('${node.id}')">` +
+      `${leafIcon(node)}${node.label}</div>` +
+      `<div class="sa-content" id="sa-cnt-${node.id}" style="display:none"></div>` +
+      `</div>`;
+  }).join('');
+}
+
+function toggleSANode(id) {
+  const node = document.querySelector(`.sa-node[data-id="${id}"]`);
+  if (node) node.classList.toggle('open');
+}
+
+function handleSALeaf(id) {
+  const node = SA_FLAT[id];
+  if (!node) return;
+  if (node.type === 'link') { window.open(node.url, '_blank'); return; }
+  const cnt = document.getElementById('sa-cnt-' + id);
+  if (!cnt) return;
+  const wasOpen = cnt.style.display !== 'none';
+  if (wasOpen) { cnt.style.display = 'none'; return; }
+  if (!cnt.dataset.loaded) {
+    cnt.innerHTML = buildSAContent(node);
+    cnt.dataset.loaded = '1';
+  }
+  cnt.style.display = '';
+}
+
+function closeAllSA() {
+  document.querySelectorAll('.sa-node.open').forEach(n => n.classList.remove('open'));
+  document.querySelectorAll('.sa-content').forEach(c => { c.style.display = 'none'; });
+}
+
+// Render tree into DOM
+document.getElementById('sa-tree').innerHTML = renderSATree(SA_TREE);
 
 // ── Boot ──────────────────────────────────────────────────────────────────
 fetchAlerts();
