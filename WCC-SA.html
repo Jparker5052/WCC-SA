@@ -40,13 +40,19 @@
     header {
       background: linear-gradient(135deg, #160600 0%, #2b1000 60%, #160600 100%);
       border-bottom: 2px solid var(--fire);
-      padding: 8px 16px;
+      padding: 6px 16px;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
+      flex-direction: column;
+      gap: 4px;
       flex-shrink: 0;
+    }
+    .header-top {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 8px;
+    }
+    .header-bottom {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 8px;
     }
 
     .header-left { display: flex; align-items: center; gap: 10px; }
@@ -326,26 +332,18 @@
     .pl-btn {
       display: inline-flex;
       align-items: center;
-      gap: 7px;
-      padding: 5px 12px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,107,53,.5);
-      background: rgba(255,107,53,.1);
+      padding: 3px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,107,53,.4);
+      background: rgba(255,107,53,.08);
       color: var(--text);
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 600;
       text-decoration: none;
       white-space: nowrap;
       transition: all .15s;
     }
     .pl-btn:hover { background: rgba(255,107,53,.25); border-color: var(--fire); }
-    .pl-badge {
-      font-size: 0.7rem; font-weight: 800;
-      padding: 2px 8px; border-radius: 8px;
-      background: #444; color: #fff;
-      transition: background .4s;
-      min-width: 38px; text-align: center;
-    }
 
     /* ── Briefing Mode toggle ─────────────────────────────── */
     .mode-toggle {
@@ -526,38 +524,34 @@
 <body>
 
 <header>
-  <div class="header-left">
-    <div class="fire-icon">&#x1F525;</div>
-    <h1>
-      Wildfire Danger Situational Awareness
-      <span>NWS &bull; SPC &bull; WFAS &mdash; Auto-refreshes every 5 minutes</span>
-    </h1>
+  <div class="header-top">
+    <div class="header-left">
+      <div class="fire-icon">&#x1F525;</div>
+      <h1>
+        Wildfire Danger Situational Awareness
+        <span>NWS &bull; SPC &bull; WFAS &mdash; Auto-refreshes every 5 minutes</span>
+      </h1>
+    </div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="mode-full" onclick="setMode('full')">Full Page</button>
+      <button class="mode-btn" id="mode-brief" onclick="setMode('brief')">Briefing Mode</button>
+    </div>
+    <div class="header-right">
+      <span class="timestamp-badge">Updated: <span id="ts">Loading&hellip;</span></span>
+      <button class="refresh-btn" onclick="refreshAll()">&#8635; Refresh</button>
+    </div>
   </div>
-  <div class="pl-bar">
-    <a class="pl-btn" href="https://www.nifc.gov/nicc/predictive-services/intelligence" target="_blank" id="pl-nifc">
-      National (NIFC)<span class="pl-badge" id="pl-nifc-badge">PL</span>
-    </a>
-    <a class="pl-btn" href="https://gacc.nifc.gov/swcc/predictive/intelligence/" target="_blank" id="pl-swcc">
-      SWCC (NM)<span class="pl-badge" id="pl-swcc-badge">PL</span>
-    </a>
-    <a class="pl-btn" href="https://ticc.tamu.edu/" target="_blank" id="pl-ticc">
-      TICC (TX)<span class="pl-badge" id="pl-ticc-badge">PL</span>
-    </a>
-    <a class="pl-btn" href="https://gacc.nifc.gov/rmcc/predictive/" target="_blank" id="pl-rmcc">
-      RMCC (CO)<span class="pl-badge" id="pl-rmcc-badge">PL</span>
-    </a>
-  </div>
-  <div class="mode-toggle">
-    <button class="mode-btn active" id="mode-full" onclick="setMode('full')">Full Page</button>
-    <button class="mode-btn" id="mode-brief" onclick="setMode('brief')">Briefing Mode</button>
-  </div>
-  <div class="header-right">
-    <span class="timestamp-badge">Updated: <span id="ts">Loading&hellip;</span></span>
-    <button class="refresh-btn" onclick="refreshAll()">&#8635; Refresh</button>
-  </div>
-  <div class="header-clocks">
-    <span class="clock-badge" id="clock-mst">MST --:--:--</span>
-    <span class="clock-badge" id="clock-cst">CST --:--:--</span>
+  <div class="header-bottom">
+    <div class="pl-bar">
+      <a class="pl-btn" href="https://www.nifc.gov/nicc" target="_blank">NICC (National)</a>
+      <a class="pl-btn" href="https://gacc.nifc.gov/rmcc/index.php" target="_blank">RMCC (CO)</a>
+      <a class="pl-btn" href="https://gacc.nifc.gov/swcc/index.htm" target="_blank">SWCC (NM)</a>
+      <a class="pl-btn" href="https://ticc.tamu.edu/" target="_blank">TICC (TX)</a>
+    </div>
+    <div class="header-clocks">
+      <span class="clock-badge" id="clock-mst">MST --:--:--</span>
+      <span class="clock-badge" id="clock-cst">CST --:--:--</span>
+    </div>
   </div>
 </header>
 
@@ -701,10 +695,6 @@
           title="Surface weather observations (METAR) &mdash; NWS observation stations">
           <span class="toggle-dot" style="background:#4499ff"></span>Surface Observations<span class="status-badge" style="background:rgba(68,153,255,.2);color:#4499ff;border-color:rgba(68,153,255,.4)">Live</span>
         </button>
-        <button class="toggle-btn" id="tog-wx_natl_fcst" onclick="toggleLayer('wx_natl_fcst')"
-          title="NWS National Forecast Weather Chart">
-          <span class="toggle-dot" style="background:#6688cc"></span>Natl Forecast Chart<span class="status-badge">Fcst</span>
-        </button>
       </div>
 
     </div>
@@ -789,7 +779,6 @@ const LAYER_META = {
   // Weather — NWS radar, observations, forecast chart
   wx_radar:    { dotColor: '#00cc66', defaultOn: false, label: 'NEXRAD Radar',         wmsLayer: null, legendType: 'dot' },
   wx_sfc_obs:  { dotColor: '#4499ff', defaultOn: false, label: 'Surface Observations', wmsLayer: null, legendType: 'esri', esriUrl: 'https://mapservices.weather.noaa.gov/vector/rest/services/obs/marine_metar_observations/MapServer' },
-  wx_natl_fcst:{ dotColor: '#6688cc', defaultOn: false, label: 'Natl Forecast Chart',  wmsLayer: null, legendType: 'esri', esriUrl: 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/natl_fcst_wx_chart/MapServer' },
 };
 
 // ── Map init ──────────────────────────────────────────────────────────────
@@ -865,11 +854,6 @@ leafletLayers.cpc_8_14 = L.esri.dynamicMapLayer({
   url: 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/cpc_8_14_day_outlk/MapServer',
   opacity: 0.75, transparent: true,
 });
-leafletLayers.wx_natl_fcst = L.esri.dynamicMapLayer({
-  url: 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/natl_fcst_wx_chart/MapServer',
-  opacity: 0.75, transparent: true,
-});
-
 // CPC sub-layer discovery — Temperature vs Precipitation
 const cpcSubLayers = { cpc_6_10: {}, cpc_8_14: {} };
 ['cpc_6_10', 'cpc_8_14'].forEach(key => {
