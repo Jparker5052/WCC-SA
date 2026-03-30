@@ -462,23 +462,23 @@
 
     /* ── Search bar ─────────────────────────────────────────── */
     .search-bar {
-      display: flex; gap: 4px; padding: 5px 10px;
+      display: flex; gap: 6px; padding: 8px 12px;
       background: var(--bg-card); border-bottom: 1px solid var(--border); flex-shrink: 0;
     }
     .search-input {
       flex: 1; background: var(--bg-alt); border: 1px solid var(--border);
-      color: var(--text); border-radius: 5px; padding: 3px 8px;
-      font-size: 0.72rem;
+      color: var(--text); border-radius: 6px; padding: 7px 12px;
+      font-size: 0.88rem;
     }
-    .search-input:focus { outline: none; border-color: var(--fire); }
+    .search-input:focus { outline: none; border-color: var(--fire); box-shadow: 0 0 0 2px rgba(255,107,53,.25); }
     .search-btn {
-      background: var(--fire); color: #fff; border: none; border-radius: 5px;
-      padding: 3px 10px; font-size: 0.72rem; cursor: pointer; font-weight: 600;
+      background: var(--fire); color: #fff; border: none; border-radius: 6px;
+      padding: 7px 16px; font-size: 0.88rem; cursor: pointer; font-weight: 600;
     }
     .search-btn:hover { background: #e55a25; }
     .search-clear {
       background: none; border: 1px solid var(--border); color: var(--muted);
-      border-radius: 5px; padding: 3px 8px; font-size: 0.72rem; cursor: pointer;
+      border-radius: 6px; padding: 7px 12px; font-size: 0.82rem; cursor: pointer;
     }
     .search-clear:hover { color: var(--text); border-color: #555; }
 
@@ -522,8 +522,7 @@
       </h1>
     </div>
     <div class="mode-toggle">
-      <button class="mode-btn active" id="mode-full" onclick="setMode('full')">Full Page</button>
-      <button class="mode-btn" id="mode-brief" onclick="setMode('brief')">Briefing Mode</button>
+      <button class="mode-btn" id="mode-maponly" onclick="toggleMapOnly()">Map Only</button>
     </div>
     <div class="header-right">
       <span class="clock-badge" id="clock-mst">MST --:--:--</span>
@@ -548,7 +547,6 @@
   <div class="card">
     <div class="card-head">
       <h2>&#x1F5FA;&#xFE0F; Fire Weather Situational Awareness Map</h2>
-      <span id="alert-count-header" style="font-size:.7rem; color:var(--muted)"></span>
     </div>
 
     <div class="search-bar">
@@ -600,14 +598,13 @@
         </button>
         <div class="sub-layer-row" id="fp-day-row" style="display:none">
           <span class="sub-layer-label">Day:</span>
-          <button class="sub-layer-pill active" data-fp-day="all" onclick="setFirePotentialDay('all')">All</button>
-          <button class="sub-layer-pill" data-fp-day="1" onclick="setFirePotentialDay('1')">1</button>
-          <button class="sub-layer-pill" data-fp-day="2" onclick="setFirePotentialDay('2')">2</button>
-          <button class="sub-layer-pill" data-fp-day="3" onclick="setFirePotentialDay('3')">3</button>
-          <button class="sub-layer-pill" data-fp-day="4" onclick="setFirePotentialDay('4')">4</button>
-          <button class="sub-layer-pill" data-fp-day="5" onclick="setFirePotentialDay('5')">5</button>
-          <button class="sub-layer-pill" data-fp-day="6" onclick="setFirePotentialDay('6')">6</button>
-          <button class="sub-layer-pill" data-fp-day="7" onclick="setFirePotentialDay('7')">7</button>
+          <button class="sub-layer-pill active" data-fp-day="1" onclick="setFirePotentialDay('1')">Current</button>
+          <button class="sub-layer-pill" data-fp-day="2" onclick="setFirePotentialDay('2')">+1 Day</button>
+          <button class="sub-layer-pill" data-fp-day="3" onclick="setFirePotentialDay('3')">+2 Days</button>
+          <button class="sub-layer-pill" data-fp-day="4" onclick="setFirePotentialDay('4')">+3 Days</button>
+          <button class="sub-layer-pill" data-fp-day="5" onclick="setFirePotentialDay('5')">+4 Days</button>
+          <button class="sub-layer-pill" data-fp-day="6" onclick="setFirePotentialDay('6')">+5 Days</button>
+          <button class="sub-layer-pill" data-fp-day="7" onclick="setFirePotentialDay('7')">+6 Days</button>
         </div>
         <button class="toggle-btn" id="tog-wfas_bi" onclick="toggleLayer('wfas_bi')"
           title="Burning Index percentile vs. historical record &mdash; today's observed conditions from WIMS fire weather stations">
@@ -726,7 +723,7 @@ const LAYER_META = {
   rfw:           { dotColor: '#cc2200', defaultOn: true,  label: 'Red Flag Warning',    wmsLayer: null, legendType: 'dot' },
   fww:           { dotColor: '#ff8c00', defaultOn: true,  label: 'Fire Weather Watch',  wmsLayer: null, legendType: 'dot' },
   // Active Fires
-  fire_potential:  { dotColor: '#ff6600', defaultOn: false, label: '7-Day Significant Fire Potential', wmsLayer: null, legendType: 'esri', esriUrl: 'https://fsapps.nwcg.gov/psp/arcgis/rest/services/npsg/outlooks_forecast/MapServer' },
+  fire_potential:  { dotColor: '#ff6600', defaultOn: true, label: '7-Day Significant Fire Potential', wmsLayer: null, legendType: 'esri', esriUrl: 'https://fsapps.nwcg.gov/psp/arcgis/rest/services/npsg/outlooks_forecast/MapServer' },
   fire_starts_24h: { dotColor: '#ff2200', defaultOn: true,  label: 'New Starts (24h)',     wmsLayer: null, legendType: 'dot' },
   fire_current:    { dotColor: '#ff4400', defaultOn: false, label: 'Active Fires',         wmsLayer: null, legendType: 'dot' },
   fire_perimeters: { dotColor: '#ff7700', defaultOn: false, label: 'Fire Perimeters',      wmsLayer: null, legendType: 'dot' },
@@ -926,20 +923,20 @@ let fpDayLayers = {}; // { 'all': [], '1': [id], '2': [id], ... }
       }
     });
     fpDayLayers['all'] = allIds;
+    setFirePotentialDay('1');
   } catch(e) {
     // Fallback: assume layers 0-6 map to days 1-7
     for (let d = 1; d <= 7; d++) fpDayLayers[String(d)] = [d - 1];
     fpDayLayers['all'] = [0,1,2,3,4,5,6];
+    setFirePotentialDay('1');
   }
 })();
 
 function setFirePotentialDay(day) {
   document.querySelectorAll('[data-fp-day]').forEach(b => b.classList.toggle('active', b.dataset.fpDay === day));
-  const ids = fpDayLayers[day] || fpDayLayers['all'] || [];
+  const ids = fpDayLayers[day] || fpDayLayers['1'] || [];
   if (ids.length && leafletLayers.fire_potential) {
     leafletLayers.fire_potential.setLayers(ids);
-  } else if (leafletLayers.fire_potential && day === 'all') {
-    leafletLayers.fire_potential.setLayers([]); // empty = show all
   }
 }
 
@@ -1088,55 +1085,43 @@ map.on('click', function(e) {
 // ── Preparedness Level — static badges, click to view source ──────────────
 // PL levels link directly to regional intelligence pages (CORS prevents live fetch)
 
-// ── Briefing Mode toggle ─────────────────────────────────────────────────
-let currentMode = 'full';
-let savedLayerState = {};
-function setMode(mode) {
-  currentMode = mode;
+// ── Map Only toggle ──────────────────────────────────────────────────────
+let mapOnlyMode = false;
+function toggleMapOnly() {
+  mapOnlyMode = !mapOnlyMode;
   const saPanel = document.querySelector('main > .card:last-child');
   const mainEl = document.querySelector('main');
-  document.getElementById('mode-full').classList.toggle('active', mode === 'full');
-  document.getElementById('mode-brief').classList.toggle('active', mode === 'brief');
-  if (mode === 'brief') {
-    // Save current layer state
-    savedLayerState = { ...layerVisible };
+  const btn = document.getElementById('mode-maponly');
+  btn.classList.toggle('active', mapOnlyMode);
+  if (mapOnlyMode) {
     saPanel.style.display = 'none';
     mainEl.style.gridTemplateColumns = '1fr';
-    // Turn off all layers, then enable briefing defaults
-    Object.keys(LAYER_META).forEach(k => {
-      if (layerVisible[k] && leafletLayers[k]) map.removeLayer(leafletLayers[k]);
-      layerVisible[k] = false;
-      applyToggleStyle(k);
-    });
-    ['fire_potential', 'fire_starts_24h'].forEach(k => {
-      layerVisible[k] = true;
-      if (leafletLayers[k]) map.addLayer(leafletLayers[k]);
-      applyToggleStyle(k);
-    });
-    updateLegend();
-    setTimeout(() => map.invalidateSize(), 100);
   } else {
     saPanel.style.display = '';
     mainEl.style.gridTemplateColumns = '4fr 2fr';
-    // Restore saved layer state
-    Object.keys(LAYER_META).forEach(k => {
-      const wasOn = savedLayerState[k] || false;
-      if (layerVisible[k] && !wasOn && leafletLayers[k]) map.removeLayer(leafletLayers[k]);
-      if (!layerVisible[k] && wasOn && leafletLayers[k]) map.addLayer(leafletLayers[k]);
-      layerVisible[k] = wasOn;
-      applyToggleStyle(k);
-    });
-    updateLegend();
-    setTimeout(() => map.invalidateSize(), 100);
   }
+  setTimeout(() => map.invalidateSize(), 100);
 }
 
 // ── Toggle helpers ────────────────────────────────────────────────────────
+const FIRE_CONDITION_KEYS = ['fire_potential', 'wfas_bi', 'wfas_erc', 'wfas_fm1000', 'wfas_usdm', 'cpc_6_10', 'cpc_8_14'];
+
 function toggleLayer(key) {
-  layerVisible[key] = !layerVisible[key];
-  if (layerVisible[key] && leafletLayers[key]) {
+  const turningOn = !layerVisible[key];
+  // Fire conditions: only one at a time
+  if (turningOn && FIRE_CONDITION_KEYS.includes(key)) {
+    FIRE_CONDITION_KEYS.forEach(k => {
+      if (k !== key && layerVisible[k]) {
+        layerVisible[k] = false;
+        if (leafletLayers[k]) map.removeLayer(leafletLayers[k]);
+        applyToggleStyle(k);
+      }
+    });
+  }
+  layerVisible[key] = turningOn;
+  if (turningOn && leafletLayers[key]) {
     map.addLayer(leafletLayers[key]);
-  } else if (!layerVisible[key] && leafletLayers[key]) {
+  } else if (!turningOn && leafletLayers[key]) {
     map.removeLayer(leafletLayers[key]);
   }
   applyToggleStyle(key);
@@ -1293,11 +1278,6 @@ function buildAlertList() {
     const pb = b.properties.event === 'Red Flag Warning' ? 0 : 1;
     return pa !== pb ? pa - pb : (a.properties.areaDesc || '').localeCompare(b.properties.areaDesc || '');
   });
-  const rfw = allAlerts.filter(f => f.properties.event === 'Red Flag Warning').length;
-  const fww = allAlerts.filter(f => f.properties.event === 'Fire Weather Watch').length;
-  const total = rfw + fww;
-  document.getElementById('alert-count-header').textContent =
-    total ? `${total} active alert${total !== 1 ? 's' : ''}` : '';
 }
 
 // ── Utility ───────────────────────────────────────────────────────────────
