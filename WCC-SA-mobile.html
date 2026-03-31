@@ -1,1 +1,53 @@
-<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>WCC-SA Mobile Dashboard</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            margin: 0;\n            padding: 0;\n        }\n        .sidebar {\n            display: none;\n            position: fixed;\n            left: 0;\n            top: 0;\n            height: 100%;\n            width: 250px;\n            background-color: #333;\n            color: white;\n            padding: 20px;\n        }\n        .sidebar.active {\n            display: block;\n        }\n        .content {\n            padding: 20px;\n            margin-left: 260px;\n        }\n        @media (max-width: 768px) {\n            .sidebar {\n                width: 100%;\n                height: auto;\n                position: relative;\n            }\n            .content {\n                margin-left: 0;\n            }\n        }\n    </style>\n</head>\n<body>\n    <div class="sidebar" id="sidebar">\n        <h2>Menu</h2>\n        <button onclick="toggleSidebar()">Close</button>\n        <ul>\n            <li>Dashboard</li>\n            <li>Options</li>\n            <li>Settings</li>\n        </ul>\n    </div>\n    <div class="content">\n        <button onclick="toggleSidebar()">Menu</button>\n        <h1>WCC-SA Mobile Dashboard</h1>\n        <p>Welcome to the mobile-optimized dashboard!</p>\n        <!-- Additional Mobile-Optimized Content -->\n    </div>\n    <script>\n        function toggleSidebar() {\n            var sidebar = document.getElementById('sidebar');\n            sidebar.classList.toggle('active');\n        }\n    </script>\n</body>\n</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WCC-SA Mobile</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([37.7749, -122.4194], 10); // Initial view
+
+        // Base layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Adding additional map layers
+        // Example: Esri services
+        var esriLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            // Additional options if needed
+        });
+        esriLayer.addTo(map);
+
+        // Add NWS alerts
+        function addNwsAlerts() {
+            // Fetch NWS data and process it here
+        }
+
+        // Add fire data endpoints
+        function addFireData() {
+            // Fetch fire data and process it here
+        }
+
+        // Responsive design handling -- This can include more complex CSS for mobile
+        window.addEventListener('resize', function() {
+            map.invalidateSize();
+        });
+
+        addNwsAlerts();
+        addFireData();
+    </script>
+</body>
+</html>
